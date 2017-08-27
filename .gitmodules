@@ -1,0 +1,3 @@
+[submodule "hugo-ivy"]
+	path = hugo-ivy
+	url = https://github.com/yihui/hugo-ivy
