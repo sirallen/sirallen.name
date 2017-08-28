@@ -184,6 +184,12 @@ body {
   border-bottom: none;
 }
 
+.masthead h1 a img {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+}
+
 .masthead .tagline {
   font-style: italic;
   text-align: right;
