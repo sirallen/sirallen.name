@@ -1,1 +1,1 @@
-These are the files I use for my personal website and blog [sirallen.name](https://sirallen.name). It's built with Hugo and deployed via Netlify. Basically all I need to do is push new content to this repo, and Netlify updates the site for me. How cool is that?
+These are the files I use for my personal website and blog [sirallen.name](https://sirallen.name). Basically all I need to do is push new content to this repo, and [Netlify](https://www.netlify.com) compiles it with [Hugo](https://gohugo.io) and updates the site for me. How cool is that?
