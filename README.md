@@ -1,0 +1,1 @@
+These are the files I use for my personal website and blog [sirallen.name](https://sirallen.name). It's built with Hugo and deployed via Netlify. Basically all I need to do is push new content to this repo, and Netlify updates the site for me. How cool is that?
