@@ -2,6 +2,7 @@ baseurl = "/"
 languageCode = "en-us"
 title = "A Hugo website"
 theme = "hugo-ivy"
+mainLogo = "/img/logo.JPG"
 googleAnalytics = ""
 disqusShortname = ""
 ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
@@ -14,10 +15,10 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
     url = "/about/"
 [[menu.main]]
     name = "GitHub"
-    url = "https://github.com/rstudio/blogdown"
+    url = "https://github.com/sirallen"
 [[menu.main]]
     name = "Twitter"
-    url = "https://twitter.com/rstudio"
+    url = "https://twitter.com/Sirallenrolly"
 
 [params]
     description = "A website built through Hugo and blogdown."
@@ -32,7 +33,7 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
     MathJaxVersion = "2.7.1"
 
     [params.logo]
-    url = "logo.png"
+    url = "logo.PNG"
     width = 50
     height = 50
     alt = "Logo"
