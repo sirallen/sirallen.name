@@ -1,0 +1,9 @@
+.menu li:not([class]) a {
+  border-bottom: none;
+}
+
+.masthead h1 a img {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+}
