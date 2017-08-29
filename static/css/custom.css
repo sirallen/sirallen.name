@@ -1,4 +1,4 @@
-.menu li:not([class]) a {
+.menu li:not([class]) a, .copyright a {
   border-bottom: none;
 }
 
@@ -6,4 +6,8 @@
   width: 140px;
   height: 140px;
   border-radius: 50%;
+}
+
+.project-desc {
+  line-height: 1.25;
 }

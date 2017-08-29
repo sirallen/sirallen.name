@@ -12,15 +12,20 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
 [[menu.main]]
     name = "About"
     url = "/about/"
+    weight = 1
 [[menu.main]]
-    name = "GitHub"
-    url = "https://github.com/sirallen"
+    name = "Blog"
+    url = "/blog/"
+    weight = 2
 [[menu.main]]
-    name = "Twitter"
-    url = "https://twitter.com/Sirallenrolly"
+    name = "Projects"
+    url = "/projects/"
+    weight = 3
 
 [params]
-    description = "A website built through Hugo and blogdown."
+    # description = "A website built with Hugo and blogdown."
+    footer = "&copy; Allen Sirolly 2017 | [Github](https://github.com/sirallen) | [Twitter](https://twitter.com/Sirallenrolly)"
+    custom_css = ["css/custom.css"]
 
     # options for highlight.js (version, additional languages, and theme)
     highlightjsVersion = "9.11.0"
