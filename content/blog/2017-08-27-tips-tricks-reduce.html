@@ -1,14 +1,15 @@
 ---
-title: "Tips and Tricks with `Reduce`"
-date: 2017-08-27
+title: "Tips and Tricks with Reduce"
+date: 2017-08-31
 categories: ["R"]
 ---
 
 
 
-<p>R comes with a number of built-in functional programming tools, one of which is the <code>Reduce</code> function which recursively calls a binary function over a vector of inputs. It’s quite versatile, but most explanations of <code>Reduce</code> tend to focus on trivial use cases that are not particularly inspiring. Even Hadley’s <a href="http://adv-r.had.co.nz/"><em>Advanced R</em></a> (a fantastic reference!) limits the discussion to implementations of cumulative sum—for which there is already <code>cumsum</code>—and multiple intersect. I’ll use this post to demonstrate slightly more sophisticated examples of how <code>Reduce</code> can come in handy, based on an alternative interpretation of the function as a finite state machine. The examples aren’t necessarily applicable to day-to-day programming tasks, but rather interesting enough that the reader will leave with a more expansive understanding of what <code>Reduce</code> can do.</p>
-<p>I think it’s appropriate to start by revisiting an example from <em>Advanced R</em> where Hadley claims it is <em>not</em> possible to use a functional. Of a for-loop implementation of an <a href="https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average">exponential moving average</a> (also <em>exponential smooth</em>), he writes, “We can’t eliminate the for loop because none of the functionals we’ve seen allow the output at position <code>i</code> to depend on both the input and output at position <code>i-1</code>” (<a href="http://adv-r.had.co.nz/Functionals.html#functionals-not">Chapter 11, page 226</a>).</p>
-<p>This is precisely what <code>Reduce</code> does! In fact, given <code>x</code> and smoothing parameter <code>alpha</code>, we can compute the EMA without using an explicit for loop:</p>
+<p>R comes with a number of built-in functional programming tools, one of which is the <code>Reduce</code> function which recursively calls a binary function over a vector of inputs. It’s quite versatile, but most explanations of <code>Reduce</code> tend to focus on trivial use cases that are not particularly inspiring. Even Hadley’s <a href="http://adv-r.had.co.nz/"><em>Advanced R</em></a> (a fantastic reference!) limits the discussion to implementations of cumulative sum—for which there is already <code>cumsum</code>—and multiple intersect. I’ll use this post to demonstrate some less obvious examples of how <code>Reduce</code> can come in handy, based on an alternative interpretation of the function as a simple kind of <a href="https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-01sc-introduction-to-electrical-engineering-and-computer-science-i-spring-2011/unit-1-software-engineering/state-machines/MIT6_01SCS11_chap04.pdf">state machine</a>. The examples aren’t necessarily applicable to day-to-day data analysis tasks, but should be interesting enough to impart a more expansive understanding of what <code>Reduce</code> can do.</p>
+<p>If you’ve never heard of <code>Reduce</code> or have never thought to use it before, I recommend taking a quick look at <a href="http://adv-r.had.co.nz/Functionals.html#functionals-not">this</a> or <a href="http://www.brodrigues.co/fput/fprog.html#reduce">this</a> or <a href="https://stackoverflow.com/questions/28545688/understand-the-reduce-function">this</a> before reading further.</p>
+<p>I think it’s appropriate to start by revisiting an example from <em>Advanced R</em> where Hadley claims it is <em>not</em> possible to use a functional. Of a for-loop implementation of an <a href="https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average">exponential moving average</a> (also <em>exponential smooth</em>), he writes, “We can’t eliminate the for-loop because none of the functionals we’ve seen allow the output at position <code>i</code> to depend on both the input and output at position <code>i-1</code>” (<a href="http://adv-r.had.co.nz/Functionals.html#functionals-not">Chapter 11, page 226</a>).</p>
+<p>This is precisely what <code>Reduce</code> does! In fact, given <code>x</code> and smoothing parameter <code>alpha</code>, we can compute the EMA without using an explicit for-loop<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a>:</p>
 <pre class="r"><code>exps &lt;- function(x, alpha) {
   Reduce(function(s, x_) alpha*x_ + (1-alpha)*s, x, accumulate=TRUE)
 }
@@ -18,11 +19,11 @@ x &lt;- cumsum(rnorm(100))
 plot(x, type=&#39;l&#39;)
 lines(exps(x, alpha=.2), col=&#39;red&#39;)
 lines(exps(x, alpha=.4), col=&#39;blue&#39;)</code></pre>
-<p><img src="/blog/2017-08-27-tips-tricks-reduce_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<p><img src="/blog/2017-08-27-tips-tricks-reduce_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
 <p>(As a reminder, specifying <code>accumulate=TRUE</code> causes <code>Reduce</code> to return all intermediate results, so that the output has the same length as <code>x</code>. We can also specify an initial value with the <code>init</code> argument, in which case the output will have length <code>length(x) + 1</code>.)</p>
-<p>More generally, <code>Reduce</code> can implement a simple state-space model (a “process”) where the state is updated according to its previous value and an input. In the EMA example, the state is <code>s</code> and the input is <code>x_</code>, an element of <code>x</code>. This conception of <code>Reduce</code> is related to the idea of applying a binary function recursively, but perhaps provides a more natural way of thinking about certain kinds of problems.</p>
-<p>Suppose next that we’d like to compute a cumulative sum that “resets” after encountering the value zero. All we need to do is write a function that takes the current sum (the state) as given, and either adds to or resets that sum depending on the value of the second argument (the input):</p>
-<pre class="r"><code>x &lt;- c(1,2,4,0,-1,3,0,1,1,1)
+<p>More generally, <code>Reduce</code> can implement a state process where the state is updated according to its previous value and an input (or an “action”), i.e., <code>$ s' = f(s, a) $</code>.<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a> In the EMA example, the state is <code>s</code> and the input is <code>x_</code>, an element of <code>x</code>. This conception of <code>Reduce</code> is related to the idea of applying a binary function recursively, but perhaps provides a more natural way of thinking about certain kinds of problems.</p>
+<p>To see this in a second example, suppose that we’d like to compute a cumulative sum that “resets” after eating the value zero. All we need to do is write a function that takes the current sum (the state) as given, and either adds to or resets that sum depending on the value of the input:</p>
+<pre class="r"><code>x &lt;- c(1, 2, 4, 0, -1, 3, 0, 1, 1, 1)
 
 Reduce(function(s, x_) (s + x_)*(x_ != 0), x, accumulate=TRUE)
 ##  [1]  1  3  7  0 -1  2  0  1  2  3</code></pre>
@@ -31,26 +32,46 @@ Reduce(function(s, x_) (s + x_)*(x_ != 0), x, accumulate=TRUE)
 <pre class="r"><code>x &lt;- rep(NA_integer_, 14)
 x[sample(length(x), 5)] &lt;- 1:5
 x
-##  [1] NA NA  3 NA NA NA  2  5 NA NA NA  4 NA  1
+##  [1] NA  3 NA NA  2 NA NA  5 NA  1 NA NA NA  4
 
 Reduce(function(s, x_) if (is.na(x_)) s else x_, x, accumulate=TRUE)
-##  [1] NA NA  3  3  3  3  2  5  5  5  5  4  4  1</code></pre>
-<p>Suppose we have a vector of 0, 1, and -1 which represent actions peformed on some state which can be 0 or 1. If the action “1” is performed, the state switches to (or remains) “1”; if “0” is performed, there is no effect; and if “-1” is performed, the state switches to (or remains) “0”. (Think of this as flipping a light switch on or off.) We can use <code>Reduce</code> to compute the values of the state given the sequence of actions <code>a</code> and an initial state:</p>
-<pre class="r"><code>(a &lt;- sample(c(-1,0,1), size=14, replace=TRUE))
-##  [1]  1 -1 -1  1  1 -1 -1  1  1 -1  1  1  1  1
+##  [1] NA  3  3  3  2  2  2  5  5  1  1  1  1  4</code></pre>
+<p>The function simply returns <code>s</code> if the input <code>x_</code> is <code>NA</code>; otherwise <code>x_</code> becomes the new <code>s</code>.</p>
+<p>Now suppose we have a vector of 0, 1, and -1 which represent actions peformed on some state which can be 0 or 1. If the action “1” is performed, the state switches to (or remains) “1”; if “0” is performed, there is no effect; and if “-1” is performed, the state switches to (or remains) “0”. (Think of this as flipping a light switch on or off.) We can use <code>Reduce</code> to compute the values of the state given a sequence of actions <code>A</code> and an initial state:</p>
+<pre class="r"><code>(A &lt;- sample(c(-1,0,1), size=14, replace=TRUE))
+##  [1]  1 -1  0  0  1  0  1 -1  0  1  1  0 -1  0
 
-Reduce(function(s, a_) as.integer(s + a_ &gt; 0), a, init=1L, accumulate=TRUE)
-##  [1] 1 1 0 0 1 1 0 0 1 1 0 1 1 1 1</code></pre>
-<p>Another example from <a href="https://stackoverflow.com/questions/41073261/">StackOverflow</a>. Say we have a binary vector <code>x</code> and want to replace the two elements following every “1” with “1”. We can use <code>Reduce</code> to create a counter that decrements by 1 in the case of “0” and resets to 3 in the case of “1”, so that any two “0” elements following a “1” correspond to positive values in the counter. Taking the <code>sign</code> then gives the desired result:</p>
+Reduce(function(s, a_) as.integer(s + a_ &gt; 0), A, init=1L, accumulate=TRUE)
+##  [1] 1 1 0 0 0 1 1 1 0 0 1 1 1 0 0</code></pre>
+<p>I’ve used this as a method to strip away blocks<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a> of unnecessary text (headers, footers, etc.) from multi-page PDFs after text conversion. All I need to do is mark the rows where the useful data and the useless text begin, then <code>Reduce</code> and drop.</p>
+<p>All of the examples so far have used integer states and inputs, but it’s straightforward to work with more complex object types like matrices and data frames. We could use <code>Reduce</code> to merge a list of data frames (a common data analysis task), or to simulate sample paths for a multivariate time series where the state is a vector <code>$S$</code>.</p>
+<p>There’s even a way to make <code>Reduce</code> handle multiple input arguments. Say we want to recursively compute <code>$ s' = a_1 \times s + a_2 $</code> given a sequence of <code>$ (a_1, a_2) $</code> pairs. We can use <code>Map</code> (another useful functional) to combine <code>A1</code> and <code>A2</code> pairwise and then use standard indexing to access the different inputs:</p>
+<pre class="r"><code>A1 &lt;- rnorm(10)
+A2 &lt;- rnorm(10)
+
+Reduce(function(s, a) a[1] * s + a[2], Map(c, A1, A2), init=1L, accumulate=TRUE)
+##  [1]  1.000000 -2.144772 -1.580902  1.100278 -2.443982  6.984242  1.683601
+##  [8] -2.150448  2.657834 -1.489104 -3.003460
+
+# or:
+# Reduce(function(s, a) rnorm(1) * s + rnorm(1), seq_len(10), init=1L, accumulate=TRUE)</code></pre>
+<p>One last example from <a href="https://stackoverflow.com/questions/41073261/">StackOverflow</a>. Say we have a binary vector <code>x</code> and want to replace the two elements following every “1” with “1”. We can use <code>Reduce</code> to create a counter that decrements by 1 in the case of “0” and resets to 3 in the case of “1”, so that any two “0” elements following a “1” correspond to positive values in the counter. Taking the <code>sign</code> then gives the desired result:</p>
 <pre class="r"><code>x &lt;- rep(0, 14)
 x[sample(length(x), 5)] &lt;- 1
 x
-##  [1] 1 1 1 0 0 0 0 0 0 1 0 1 0 0
+##  [1] 0 1 0 0 1 1 0 1 0 0 1 0 0 0
 
 (counter &lt;- Reduce(function(s, x_) min(3, max(s-1, 0) + x_), 3*x, accumulate=TRUE))
-##  [1] 3 3 3 2 1 0 0 0 0 3 2 3 2 1
+##  [1] 0 3 2 1 3 3 2 3 2 1 3 2 1 0
 
 sign(counter)
-##  [1] 1 1 1 1 1 0 0 0 0 1 1 1 1 1</code></pre>
-<p>This solution takes some thought, and perhaps an alternative method would be preferable for the sake of clarity. But the point is that <code>Reduce</code> is flexible enough to be a contender for a much wider range of problems than is usually recognized.</p>
-<p>I hope that some of the above examples help to illuminate how <code>Reduce</code> can be used cleverly to provide compact solutions for certain kinds of programming problems.</p>
+##  [1] 0 1 1 1 1 1 1 1 1 1 1 1 1 0</code></pre>
+<p>This solution takes some thought, and perhaps an alternative method would be preferable for the sake of readability. But the point is that <code>Reduce</code> is flexible enough to be a contender for a much wider range of problems than is usually recognized. My hope is that the above examples help illuminate how <code>Reduce</code> (and functional programming) can be used cleverly to provide compact solutions for certain kinds of programming problems.</p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Of course, if you take a look at the source code for <code>Reduce</code> you’ll see that it uses a for-loop under the hood.<a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>The process is restricted to be <em>Markov</em>, i.e., dependent only on the input <code>a</code> and the “current” <code>s</code>, and not on any previously computed values of <code>s</code>.<a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>I.e., multiple lines in a data frame after using <code>readLines</code><a href="#fnref3">↩</a></p></li>
+</ol>
+</div>
