@@ -42,9 +42,9 @@ R1 = Vectorize(
     # s -- service fee rate (monthly, on remaining principal)
     # P0, r, m -- args to A()
     A_ = A(P0, r, m)
-    R = (sum(A_ - s * P_i(A_, P0, r, 1:m)) - P0) / P0
+    ROI = (sum(A_ - s * P_i(A_, P0, r, 1:m)) - P0) / P0
     # annualize
-    (1 + R)^(12/m) - 1
+    (1 + ROI)^(12/m) - 1
   },
   vectorize.args = 'm')
 
@@ -52,9 +52,9 @@ R2 = Vectorize(
   function(s, P0, r, m) {
     # s  -- service fee rate (monthly, on payments)
     # P0, r, m -- args to A()
-    R = (m * (1 - s) * A(P0, r, m) - P0) / P0
+    ROI = (m * (1 - s) * A(P0, r, m) - P0) / P0
     # annualize
-    (1 + R)^(12/m) - 1
+    (1 + ROI)^(12/m) - 1
   },
   vectorize.args = 'm')
 ```
@@ -74,7 +74,7 @@ legend('topright', c('R1','R2'), lty=c(1,2), col=c('black','red'),
        inset=.01)
 ```
 
-This isn't a complete picture since it doesn't account for returns from reinvestment (purchasing new Notes or whole loans after receiving each $A_i$, which can be done recursively).^[For `$m = 1$` annualization and reinvestment in "identical" loans are effectively the same. But for `$m > 1$`, ROI doesn't account for the additional returns that can be achieved through reinvestment.] But it's clear that investors who are charged fees under scheme $R_1$ can achieve higher ROI with early payment, i.e., `$ \Delta_m R_1 < 0$`. In contrast, early payment is a suboptimal outcome under scheme $R_2$.
+This isn't a complete picture since it doesn't account for returns from reinvestment (purchasing new Notes or whole loans after receiving each $A_i$, which can be done recursively).^[For `$m = 1$` annualization and reinvestment in "identical" loans are effectively the same. But for `$m > 1$`, the return calculation doesn't account for the additional returns that can be achieved through reinvestment.] But it's clear that investors who are charged fees under scheme $R_1$ can achieve higher returns with early payment, i.e., `$ \Delta_m R_1 < 0$`. In contrast, early payment is a suboptimal outcome under scheme $R_2$.
 
 We can't yet declare the matter settled, since there's a potential problem with the above graph. Empirically, given $m$, the borrower tends to back-load prepayment to later periods, so the assumption of fixed payments isn't very realistic. (I checked this using Lending Club's payments data, but I'll defer the evidence to a future post.) A more realistic flow of payments would be constant installments for $m-1$ periods (computed with the amortization formula using the loan term $T$ in place of $m$, which gives the _minimum_ amount the borrower must pay each month), and one large payment to expunge all outstanding principal (with interest) in period $m$.
 
@@ -101,9 +101,9 @@ R1 = Vectorize(
     # s -- service fee rate (monthly, on remaining principal)
     # P0, r, m -- args to A()
     A_seq = gen_A_seq(P0, r, m)
-    R = (sum(A_seq) - s * sum(P_i(A_seq, P0, r, 1:m)) - P0) / P0
+    ROI = (sum(A_seq) - s * sum(P_i(A_seq, P0, r, 1:m)) - P0) / P0
     # annualize
-    (1 + R)^(12/m) - 1
+    (1 + ROI)^(12/m) - 1
   },
   vectorize.args = 'm')
 
@@ -112,9 +112,9 @@ R2 = Vectorize(
     # s  -- service fee rate (monthly, on payments)
     # P0, r, m -- args to A()
     A_seq = gen_A_seq(P0, r, m)
-    R = ((1 - s) * sum(A_seq) - P0) / P0
+    ROI = ((1 - s) * sum(A_seq) - P0) / P0
     # annualize
-    (1 + R)^(12/m) - 1
+    (1 + ROI)^(12/m) - 1
   },
   vectorize.args = 'm')
 
@@ -131,5 +131,5 @@ legend('topright', c('R1','R2'), lty=c(1,2), col=c('black','red'),
        inset=.01)
 ```
 
-With this more realistic payment sequence, an investor would still prefer early payment under $R_1$, though the "penalty" on ROI of one additional month---corresponding to the slope of the curve---is not as pronounced for small $m$. Interestingly, the curve corresponding to $R_2$ attains an interior maximum, suggesting that a Note investor might be best off if the borrower prepays, but not _too_ early.
+With this more realistic payment sequence, an investor would still prefer early payment under $R_1$, though the "penalty" on returns of one additional month---corresponding to the slope of the curve---is not as pronounced for small $m$. Interestingly, the curve corresponding to $R_2$ attains an interior maximum, suggesting that a Note investor might be best off if the borrower prepays, but not _too_ early.
 
