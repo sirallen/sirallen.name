@@ -3,7 +3,7 @@ title: "Things I'm Working On"
 ---
 
 
-**The Impact of Smart Money on Retail Investors in Online Lending Marketplaces** (with [Tzuo Hann Law](www.tzuohann.com))  
+**The Impact of Smart Money on Retail Investors in Online Lending Marketplaces** (with [Tzuo Hann Law](http://www.tzuohann.com))  
 We use novel data from [Lending Club](https://en.wikipedia.org/wiki/Lending_Club) to evaluate the effects of the site's market design on portfolio selection and performance for two types of investors. Part of our data is self-collected and allows us to identify whether loans were funded by retail or institutional investors, as well as how quickly those loans were funded.
 
 **Visualizing the Structures of Large Banking Institutions**  
