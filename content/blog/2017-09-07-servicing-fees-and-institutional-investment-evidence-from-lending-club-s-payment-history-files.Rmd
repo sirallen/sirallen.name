@@ -23,7 +23,7 @@ Critically, we obtained additional data from the site that can be used to identi
 
 ### The Data
 
-The downloadable files are large---almost 6 GB each---but contain redundancies, as constant loan attributes are recorded for every (loan, payment) row. These "fixed" attributes can be spliced off and saved to a separate file, reducing the total file size to under 4 GB---small enough to fit in memory.^[The script that does this is available on [my Github page](https://github.com/sirallen).]
+The downloadable files are large---almost 6 GB each---but contain redundancies, as constant loan attributes are recorded for every (loan, payment) row. These "fixed" attributes can be spliced off and saved to a separate file, reducing the total file size to under 4 GB---small enough to fit in memory.^[The script that does this is available [here](https://www.dropbox.com/s/rf2jdewwdelai89/_processPmtHist.R?raw=1).]
 
 ```{r echo=-(3:4)}
 library(data.table) # using v1.10.5 (dev)
