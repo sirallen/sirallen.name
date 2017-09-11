@@ -1,0 +1,135 @@
+---
+title: Calculating Returns for Two Kinds of Servicing Fee Schemes (Supplement)
+author: Allen Sirolly
+date: '2017-09-08'
+slug: calculating-returns-for-two-kinds-of-servicing-fee-schemes-supplement
+categories: []
+tags: []
+---
+
+_This post is a supplement to [A Note on Lending Club and Institutional Investment](https://sirallen.name/blog/note-on-lending-club/)._
+
+Suppose we'd like to compute ROI for a loan investment based on two different fee schemes. The first (call it $R_1$) charges a fee $s_1$ in proportion to each period's outstanding principal balance, while the second ($R_2$) charges a fee $s_2$ on all payments by the borrower. The borrower can "prepay" a loan with term $T$ by paying off the entire principal in $m < T$ months. Given initial principal $P_0$, monthly interest rate $r$, payment periods $m$, and payment sequence $\{A_i\}_{i=1}^m$, the corresponding annualized returns are
+$$
+R_1 = \left[ 1 + \frac{\sum_{i=1}^m (A_i - s_1 P_i) - P_0}{P_0} \right]^{12/m} - 1 \\
+R_2 = \left[ 1 + \frac{\sum_{i=1}^m (1 - s_2) A_i - P_0}{P_0} \right]^{12/m} - 1
+$$
+
+First assuming constant monthly payments given $m$,
+$$
+A_i = P_0 \frac{r(1+r)^m}{(1+r)^m - 1} \equiv A,
+$$
+we can use the following code to see how $R_1$ and $R_2$ vary with $m$.^[The principal after $i$ payments is `$ P_i = (1+r)P_{i-1} - A_i = (1+r)^i P_0 - \sum_{j=1}^i (1+r)^{j-1} A_j $`. By construction (i.e., by the choice of $\{A_i\}$), $P_m = 0$.] (Technically $P_0$ isn't needed, but I've kept it to make the calculations more explicit.)
+
+```{r}
+A = function(P0, r, m) {
+  # P0 -- initial principal
+  # r  -- interest rate (monthly)
+  # m  -- number of payment periods
+  P0 * r * (1 + r)^m / ((1 + r)^m - 1)
+}
+
+P_i = Vectorize(
+  # Compute outstanding principal after i payments
+  function(A, P0, r, i) {
+    if (i==0) return(P0)
+    (1 + r)^i * P0 - A * sum((1 + r)^(0:(i-1)))
+  },
+  vectorize.args = 'i')
+
+R1 = Vectorize(
+  function(s, P0, r, m) {
+    # s -- service fee rate (monthly, on remaining principal)
+    # P0, r, m -- args to A()
+    A_ = A(P0, r, m)
+    R = (sum(A_ - s * P_i(A_, P0, r, 1:m)) - P0) / P0
+    # annualize
+    (1 + R)^(12/m) - 1
+  },
+  vectorize.args = 'm')
+
+R2 = Vectorize(
+  function(s, P0, r, m) {
+    # s  -- service fee rate (monthly, on payments)
+    # P0, r, m -- args to A()
+    R = (m * (1 - s) * A(P0, r, m) - P0) / P0
+    # annualize
+    (1 + R)^(12/m) - 1
+  },
+  vectorize.args = 'm')
+```
+
+The test case below is a loan with \$1000 principal (again, doesn't matter) and 15% annual interest rate, with fees $s_1$ and $s_2$ equal to 1.3% per annum and 1%, respectively. (According to Lending Club's policy for whole loans, $s_2$ is variable but 1.3% per annum is the _highest_ servicing fee it will charge.)
+```{r}
+# Returns for institutional (whole loan) investors
+r_inst = R1(s=.013/12, P0=1000, r=.15/12, m=1:36)
+
+# Returns for retail (Note) investors
+r_ret  = R2(s=.01, P0=1000, r=.15/12, m=1:36)
+
+matplot(1:36, cbind(r_inst, r_ret), las=1, type='l',
+        xlab='Months until full payment (m)',
+        ylab='Annualized returns')
+legend('topright', c('R1','R2'), lty=c(1,2), col=c('black','red'),
+       inset=.01)
+```
+
+This isn't a complete picture since it doesn't account for returns from reinvestment (purchasing new Notes or whole loans after receiving each $A_i$, which can be done recursively).^[For `$m = 1$` annualization and reinvestment in "identical" loans are effectively the same. But for `$m > 1$`, ROI doesn't account for the additional returns that can be achieved through reinvestment.] But it's clear that investors who are charged fees under scheme $R_1$ can achieve higher ROI with early payment, i.e., `$ \Delta_m R_1 < 0$`. In contrast, early payment is a suboptimal outcome under scheme $R_2$.
+
+We can't yet declare the matter settled, since there's a potential problem with the above graph. Empirically, given $m$, the borrower tends to back-load prepayment to later periods, so the assumption of fixed payments isn't very realistic. (I checked this using Lending Club's payments data, but I'll defer the evidence to a future post.) A more realistic flow of payments would be constant installments for $m-1$ periods (computed with the amortization formula using the loan term $T$ in place of $m$, which gives the _minimum_ amount the borrower must pay each month), and one large payment to expunge all outstanding principal (with interest) in period $m$.
+
+It's straightforward to modify some of the functions above to accomodate non-constant payments:
+```{r}
+P_i = Vectorize(
+  # Compute outstanding principal after i payments
+  function(A_seq, P0, r, i) {
+    # A_seq -- sequence of payments (length m)
+    if (i==0) return(P0)
+    (1 + r)^i * P0 - sum(A_seq[1:i] * (1 + r)^(0:(i-1)))
+  },
+  vectorize.args = 'i')
+
+gen_A_seq = function(P0, r, m, Term=36) {
+  # Sequence of m - 1 installments, plus final payment (1+r)*P_{m-1}
+  Inst = A(P0, r, Term)
+  A_seq = rep(Inst, m - 1)
+  c(A_seq, (1 + r) * P_i(A_seq, P0, r, m - 1))
+}
+
+R1 = Vectorize(
+  function(s, P0, r, m) {
+    # s -- service fee rate (monthly, on remaining principal)
+    # P0, r, m -- args to A()
+    A_seq = gen_A_seq(P0, r, m)
+    R = (sum(A_seq) - s * sum(P_i(A_seq, P0, r, 1:m)) - P0) / P0
+    # annualize
+    (1 + R)^(12/m) - 1
+  },
+  vectorize.args = 'm')
+
+R2 = Vectorize(
+  function(s, P0, r, m=36) {
+    # s  -- service fee rate (monthly, on payments)
+    # P0, r, m -- args to A()
+    A_seq = gen_A_seq(P0, r, m)
+    R = ((1 - s) * sum(A_seq) - P0) / P0
+    # annualize
+    (1 + R)^(12/m) - 1
+  },
+  vectorize.args = 'm')
+
+# Returns for institutional (whole loan) investors
+r_inst = R1(s=.013/12, P0=1000, r=.15/12, m=1:36)
+
+# Returns for retail (Note) investors
+r_ret  = R2(s=.01, P0=1000, r=.15/12, m=1:36)
+
+matplot(1:36, cbind(r_inst, r_ret), las=1, type='l',
+        xlab='Months until full payment (m)',
+        ylab='Annualized returns')
+legend('topright', c('R1','R2'), lty=c(1,2), col=c('black','red'),
+       inset=.01)
+```
+
+With this more realistic payment sequence, an investor would still prefer early payment under $R_1$, though the "penalty" on ROI of one additional month---corresponding to the slope of the curve---is not as pronounced for small $m$. Interestingly, the curve corresponding to $R_2$ attains an interior maximum, suggesting that a Note investor might be best off if the borrower prepays, but not _too_ early.
+

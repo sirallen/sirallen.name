@@ -1,0 +1,213 @@
+---
+title: 'A Note on Lending Club and Institutional Investment'
+author: 'Allen Sirolly'
+date: '2017-09-07'
+slug: note-on-lending-club
+categories: []
+tags: []
+---
+
+
+
+<p><em>This post is related to ongoing research with <a href="http://www.tzuohann.com/">Tzuo Hann Law</a> (Boston College).</em></p>
+<p>One of technology’s roles in modern finance is disrupting intermediation. In the case of household and small business credit, online marketplace lending platforms compete with traditional intermediaries such as banks or online money lenders, operating as streamlined crowdfunding platforms for lending. Investors can purchase debt instruments which represent pieces of an underlying loan and earn returns in the form of interest paid by borrowers, while the platforms earn revenue through various fees.</p>
+<p>Lending Club—the largest platform in this <a href="https://www.orchardplatform.com/company/lendscape/">“Lendscape”</a>—publishes a rich data set of loan originations, complete with borrowers’ credit profiles, updated loan status, and recent payment information. It is publicly available from <a href="https://www.lendingclub.com/info/download-data.action">Lending Club Statistics</a> and has been the subject of detailed analyses in blog posts, academic papers, and elsewhere. It has even been featured on <a href="https://www.kaggle.com/wendykan/lending-club-loan-data">Kaggle</a>.</p>
+<p>A less-advertised fact is that Lending Club also publishes a granular view of the month-by-month payment histories of individual loans, available from <a href="https://www.lendingclub.com/company/additional-statistics">Additional Statistics</a> (registered members only). This post leverages the payments data to show how portfolio selection differs for large institutional investors<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> relative to small-money investors.</p>
+<p>Critically, we obtained additional data from the site that can be used to identify whether each loan was funded through the “whole” or “fractional” program. This allows us to compare aggregate portfolio selection and performance between two classes of investors, institutional (corresponding to whole loan purchasers) and retail (fractional or note purchasers). In particular, there is strong evidence that institutional investors prefer to fund loans whose borrowers will prepay long before the maturity date, which can potentially be explained by structural features of the marketplace.<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a></p>
+<div id="the-data" class="section level3">
+<h3>The Data</h3>
+<p>The downloadable files are large—almost 6 GB each—but contain redundancies, as constant loan attributes are recorded for every (loan, payment) row. These “fixed” attributes can be spliced off and saved to a separate file, reducing the total file size to under 4 GB—small enough to fit in memory.<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a></p>
+<pre class="r"><code>library(data.table) # using v1.10.5 (dev)
+library(ggplot2)
+
+ph_fixed = fread(&#39;paymentHistory_fixed.csv&#39;, key=&#39;loan_id&#39;)
+ph_master = fread(&#39;paymentHistory.csv&#39;, key=c(&#39;loan_id&#39;,&#39;mob&#39;))</code></pre>
+<p>As the file names suggest, <code>paymentHistory_fixed.csv</code> contains the fixed attributes for each loan id, and <code>paymentHistory.csv</code> contains the breakdown of borrowers’ month-by-month payments. The following variables are available:</p>
+<p>In <code>ph_fixed</code>:</p>
+<ul>
+<li><p><code>loan_id</code> – Unique loan identifier.</p></li>
+<li><p><code>interestrate</code> – The interest rate.</p></li>
+<li><p><code>term</code> – The term, either 36 months or 60 months.</p></li>
+<li><p><code>grade</code> – Letter grade in A–G assigned to the loan based on “the credit quality and underlying risk of the borrower.”</p></li>
+<li><p><code>vintage</code> – The year-quarter of issuance.</p></li>
+<li><p>Other variables: <code>monthlycontractamt</code>, <code>dti</code>, <code>state</code>, <code>appl_fico_band</code>, <code>homeownership</code>, …</p></li>
+</ul>
+<p>In <code>ph_master</code>:</p>
+<ul>
+<li><p><code>loan_id</code> – Unique loan identifier.</p></li>
+<li><p><code>mob</code> – Number of months after loan issuance (index for the payment period).</p></li>
+<li><p><code>pbal_beg_period</code> – Remaining principal balance at the beginning of the payment period.</p></li>
+<li><p><code>due_amt</code> – The amount due.</p></li>
+<li><p>Breakdown of the payment received (identical set of variables with suffix <code>_inv</code> corresponds to payment received by investors; different if loan received partial funding from Lending Club):</p>
+<ul>
+<li><p><code>prncp_paid</code> – Amount of principal paid.</p></li>
+<li><p><code>int_paid</code> – Amount of interest paid.</p></li>
+<li><p><code>fee_paid</code> – Amount of late fees paid.</p></li>
+<li><p><code>coamt</code> – Charge-off amount.</p></li>
+<li><p><code>pco_recovery</code> – Amount recovered in case of charge-off.</p></li>
+<li><p><code>pco_collection_fee</code> – Amount of recovery collection fees in case of charge-off.</p></li>
+</ul></li>
+<li><p><code>received_d</code> – Date the period’s payment was received.</p></li>
+<li><p><code>period_end_lstat</code> – The loan status at the end of the payment period. One of {“Issued”, “Current”, “In Grace Period”, “Late (16-30 days)”, “Late (31-120 days)”, “Default”, “Charged Off”, “Fully Paid”}.</p></li>
+</ul>
+<p>The variable <code>initial_list_status</code> is available in the public data and identifies whether a loan was initially listed in the whole (W) or fractional (F) market. Loans listed “whole” become available for fractional funding (and vice versa) if there are no buyers within a certain time frame. To determine whether a loan was actually funded by a whole loan investor, we use this in conjunction with <code>num_investors</code> which is scraped from individual “loan detail” pages (example screencap below). The uptake of whole loans varies significantly over time and across loan grades but is typically 70-80 percent overall.</p>
+<center>
+<img src="https://www.dropbox.com/s/zk1b9nzixlotimi/sample.png?raw=1" width="700px">
+</center>
+<center>
+Sample “loanDetail.action” page which includes field showing number of investors
+</center>
+<p>The combination of <code>initial_list_status</code> and <code>num_investors</code> is only a proxy, since it’s possible for a single fractional investor to buy all of the notes for a loan that was initially listed whole. The Lending Club <a href="https://www.lendingclub.com/info/sales-reports.action">Sales Reports</a> can be used to figure out the actual category of funding instrument—notes, whole loans, or trust certificates—which corresponds directly to investor type but is unreliable prior to September 2014. The analysis below uses the proxy but is robust to the Sales Reports alternative in the post-September 2014 frame.</p>
+<p>The following code chunk merges in these additional variables and transforms the data:</p>
+<pre class="r"><code>additional = fread(&#39;additional.csv&#39;)
+setnames(additional, &#39;initial_list_status&#39;, &#39;ils&#39;)
+ph_fixed = additional[ph_fixed, on=&#39;loan_id&#39;]
+rm(additional)
+
+# Month of issuance
+ph_fixed[, `:=`(issueMon = zoo::as.yearmon(issueddate, &#39;%b%Y&#39;), issueddate = NULL)]
+
+# Number of payment periods elapsed since issuance
+ph_fixed[, numPay:= 12*(zoo::as.yearmon(&#39;Aug 2017&#39;) - issueMon)]
+
+# Correct discrepancies in num_investors (Found evidence that whole loans
+# no longer pushed into fractional market after buffer period, starting
+# Jun 2016. So every W loan must have 1 investor.)
+ph_fixed[ils==&#39;W&#39; &amp; issueMon &gt;= &#39;Jun 2016&#39;, num_investors:= 1]
+
+# Pool grades F and G (small sample size)
+ph_fixed[grade %in% c(&#39;F&#39;,&#39;G&#39;), grade:= &#39;FG&#39;]
+
+# Identify investor types using initial_list_status &amp; num_investors
+ph_fixed[ils==&#39;W&#39; &amp; num_investors==1, investor_type:= &#39;W&#39;]
+ph_fixed[ils==&#39;F&#39; | num_investors&gt;=2, investor_type:= &#39;F&#39;]
+
+# Compute the fraction of funding via notes using sales reports data
+ph_fixed[is.na(funded_amt_lc), funded_amt_lc:= 0]
+ph_fixed[, funded_amt_inv:= funded_amt - funded_amt_lc]
+ph_fixed[, note_wgt:= ifelse(is.na(sold_amt), 0, (sold_amt-funded_amt_lc)/funded_amt_inv)]</code></pre>
+</div>
+<div id="analysis" class="section level3">
+<h3>Analysis</h3>
+<p>One important dimension along which aggregate portfolios might differ is the time to full repayment by borrowers, who must pay the installment at minimum but can <em>prepay</em> if desired. With prepayment, a loan may be fully paid well before the maturity date, and consequently investors will lose future interest payments.</p>
+<p>Apropos of this idea, the following code chunk computes the fraction of loans, by grade and investor type, which reached a terminal state—either “fully paid” (fp) or “charged off” (co)—by month <span class="math inline">\(i\)</span>, for <span class="math inline">\(1 \leq i \leq T\)</span>. I restrict the sample to 3-year loans, so <span class="math inline">\(T = 36\)</span>. (There are also 5-year loans which I ignore for simplicity.) The filter <code>numPay &gt;= i</code> ensures that only borrowers who could have possibly made <span class="math inline">\(i\)</span> payments are counted in the denominator (i.e., excluding loans that were issued fewer than <span class="math inline">\(i\)</span> months ago).</p>
+<pre class="r"><code>bigT = 36
+w_id = ph_fixed[investor_type==&#39;W&#39; &amp; term==bigT &amp; issueMon &gt;= &#39;Sep 2012&#39;,
+                .(loan_id, numPay, grade)]
+f_id = ph_fixed[investor_type==&#39;F&#39; &amp; term==bigT &amp; issueMon &gt;= &#39;Sep 2012&#39;,
+                .(loan_id, numPay, grade)]
+
+# By grade g and months after issuance mob:
+# w_fp, f_fp -- number of whole (fractional) loans fully paid
+# w_co, f_co -- number of whole (fractional) loans charged off
+terminal = CJ(grade=ph_fixed$grade, mob=1:bigT, unique=TRUE)
+terminal[, c(&#39;w_fp&#39;,&#39;f_fp&#39;,&#39;w_co&#39;,&#39;f_co&#39;,&#39;nw&#39;,&#39;nf&#39;):= NA_real_]
+
+for (g in terminal[, unique(grade)]) {
+  cat(&#39;Grade&#39;, g, &#39;\n&#39;)
+  
+  for (i in 1:bigT) {
+    cat(i); if (i&lt;bigT) cat(&#39;,&#39;) else cat(&#39;\n&#39;)
+    w_ids = w_id[numPay &gt;=i &amp; grade==g, loan_id]
+    f_ids = f_id[numPay &gt;=i &amp; grade==g, loan_id]
+    
+    terminal[J(g,i), `:=`(
+      w_fp = ph_master[J(w_ids)][mob &lt;= i,
+                                 sum(period_end_lstat==&#39;Fully Paid&#39;)],
+      f_fp = ph_master[J(f_ids)][mob &lt;= i,
+                                 sum(period_end_lstat==&#39;Fully Paid&#39;)],
+      w_co = ph_master[J(w_ids)][mob &lt;= i,
+                                 sum(period_end_lstat==&#39;Charged Off&#39;)],
+      f_co = ph_master[J(f_ids)][mob &lt;= i,
+                                 sum(period_end_lstat==&#39;Charged Off&#39;)],
+      nw = length(w_ids),
+      nf = length(f_ids))]
+    
+  }; rm(i, w_ids, f_ids)
+  
+}; rm(g)
+
+# Compute fractions from counts
+terminal[, `:=`(
+  w_fp = w_fp/nw, f_fp = f_fp/nf, w_co = w_co/nw, f_co = f_co/nf,
+  all_fp = (w_fp + f_fp)/(nw + nf), all_co = (w_co + f_co)/(nw + nf))]
+
+# Reshape wide --&gt; long
+terminal.long = melt(terminal, id=key(terminal), patterns(&#39;_fp&#39;,&#39;_co&#39;),
+                     value.name=c(&#39;Fully paid&#39;, &#39;Charged off&#39;))
+
+levels(terminal.long$variable) &lt;- c(&#39;Whole&#39;,&#39;Fractional&#39;,&#39;All&#39;)
+setkey(terminal.long, variable, grade, mob)</code></pre>
+<p>The plots below reveal two interesting empirical facts about aggregate portfolios. First, loans funded by institutional investors are paid off sooner than those funded by retail investors, even though the overall default rates (measured from the top) are slightly higher. This holds true within all loan grades, so it cannot be the result of differing selection with respect to grade.</p>
+<pre class="r"><code>ggplot(terminal.long[!&#39;All&#39;], aes(x=mob, y=100*`Fully paid`, color=variable)) +
+  geom_line() +
+  geom_point(data=function(d) d[mob==bigT]) +
+  geom_line(aes(y=100*(1-`Charged off`)), lty=&#39;dashed&#39;) +
+  geom_point(data=function(d) d[mob==bigT], aes(y=100*(1-`Charged off`))) +
+  scale_color_manual(&#39;&#39;, values=c(Fractional=&#39;blue&#39;, Whole=&#39;red&#39;)) +
+  scale_x_continuous(breaks=seq(0,bigT,6)) +
+  scale_y_continuous(breaks=seq(0,100,20)) +
+  facet_wrap(&#39;grade&#39;, ncol=2) +
+  labs(x=&#39;Months since issuance&#39;, y=&#39;&#39;,
+       title=&#39;Time to Terminal Status, 3-Year Loans, by Grade&#39;,
+       subtitle=&#39;Percent fully paid (solid) or charged off (dashed)&#39;) +
+  theme(legend.pos=&#39;top&#39;)</code></pre>
+<p><img src="/blog/2017-09-07-servicing-fees-and-institutional-investment-evidence-from-lending-club-s-payment-history-files_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<!-- Second, while low-grade loans have lower payment rates overall, they are _more_ likely to be fully paid in the first 12 months after issuance. These instances could represent loans to de facto creditworthy borrowers who "look bad on paper" (i.e., have less than stellar credit scores) or are otherwise misclassified by Lending Club. Despite this fact, institutional investors are _less_ likely to fund low-grade loans (see plot of whole loan uptake by grade---not shown here). -->
+<!-- ```{r} -->
+<!-- ggplot(terminal.long['All'], aes(x=mob, y=100*`Fully paid`, color=grade)) + -->
+<!--   geom_line() + -->
+<!--   geom_point(data=function(d) d[, .SD[.N], by='grade']) + -->
+<!--   scale_x_continuous(breaks=seq(0,bigT,6)) + -->
+<!--   scale_y_continuous(breaks=seq(0,100,20)) + -->
+<!--   labs(x='Months since issuance', y='', -->
+<!--        title='Time to Full Payment, 3-Year Loans', -->
+<!--        subtitle='Percent fully paid (counts)') -->
+<!-- ``` -->
+<p>The next code chunk below computes the fraction of whole loan offerings funded by institutional investors (“uptake”), conditional on vintage and the ex-post realization of months until full repayment. The top of the corresponding plot is dominated by bright red, suggesting that these investors are skilled at identifying loans that end up being repaid shortly after issuance. (“Skilled” in the sense of having high <a href="https://en.wikipedia.org/wiki/Precision_and_recall">recall</a>.) This helps to rule out the possibility that the entire selection of offerings is skewed toward such loans, which could be consistent with the first plot but not this one.</p>
+<pre class="r"><code># data.table with &#39;fixed&#39; attributes for fully paid loans,
+# plus month of final payment (prepaid_mob)
+ph_fixed_FP = ph_fixed[
+  ph_master[period_end_lstat==&#39;Fully Paid&#39;,
+            .(loan_id, prepaid_mob=mob)][
+              !duplicated(loan_id, fromLast=TRUE)],
+  on=&#39;loan_id&#39;, nomatch=0]
+
+W_uptake = ph_fixed_FP[ils==&#39;W&#39; &amp; term==36 &amp; prepaid_mob &lt;= 36 &amp;
+                         vintage &lt; &#39;16Q3&#39;,
+                       .(V1 = sum((num_investors==1)*funded_amt)/sum(funded_amt),
+                         count = .N),
+                       keyby=.(vintage, prepaid_mob)]
+
+ggplot(W_uptake, aes(x=vintage, y=prepaid_mob)) +
+    geom_tile(aes(fill=ifelse(count &lt; 7, NA_real_, V1))) +
+    scale_fill_gradient(&#39;&#39;, low=&#39;blue&#39;, high=&#39;red&#39;, na.value=&#39;transparent&#39;) +
+    scale_y_reverse(breaks=seq(0,36,6)) +
+    labs(x=&#39;Vintage&#39;, y=&#39;Months until fully paid&#39;,
+         title=&#39;Institutional Investors Prefer Early Payment&#39;,
+         subtitle=&#39;Fraction of whole loan offerings funded by 1 investor&#39;)</code></pre>
+<p><img src="/blog/2017-09-07-servicing-fees-and-institutional-investment-evidence-from-lending-club-s-payment-history-files_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<p>There are at least two explanations that are consistent with the above observations.</p>
+<p>First is Lending Club’s policy governing servicing fees:<a href="#fn4" class="footnoteRef" id="fnref4"><sup>4</sup></a></p>
+<blockquote>
+<p><em>Note investors generally pay us a servicing fee equal to 1% of payment amounts received from the borrower. Whole loan purchasers pay a monthly servicing fee of up to 1.3% per annum on the month-end principal balance of loans serviced.</em></p>
+</blockquote>
+<p>When fees are a proportion of remaining principal, investors will strongly prefer early payment—even if it means accepting higher default risk, as suggested by the first plot.<a href="#fn5" class="footnoteRef" id="fnref5"><sup>5</sup></a> (See this supplemental <a href="https://sirallen.name/blog/note-on-lending-club">post</a> for a mathematical explanation.) Thus servicing fees may act as a mechanism to influence portfolio selection for each of the two types of investors.</p>
+<p>A second possible explanation concerns the availability of liquidity. On Lending Club, loans are 3-year and 5-year fixed income investments, and it may take that long to realize the full return from the initial capital. Retail investors have access to a <a href="https://www.lendingclub.com/foliofn/aboutTrading.action">Note Trading Platform</a> via Folio Investing, which acts as a secondary market to provide liquidity. Institutional investors have no analogous avenues to trade whole loans, which means the only liquidity option is to fund loans whose borrowers will prepay. Like servicing fees, this can also be viewed as a structural feature of the market that might produce the observed patterns.</p>
+</div>
+<div id="conclusion" class="section level3">
+<h3>Conclusion</h3>
+<p>As large institutional investors have eclipsed<a href="#fn6" class="footnoteRef" id="fnref6"><sup>6</sup></a> small-money retail investors on Lending Club and other platforms, it has become increasingly important to understand how these two types interact through their investment choices. In one simplified view, they compete for high-quality loans that will yield the most attractive returns, prompting questions related to the fairness of marketplace design. This is an especially salient issue for Lending Club since whole loan investors are given priority in loan selection.</p>
+<p>This post presented evidence that institutional and retail investors have different preferences over loan portfolios, and that these differences may be induced by features of Lending Club’s market design, namely servicing fees and access to liquidity. While the analysis is far from complete, it blunts the appeal of the pure competitive view, instead suggesting that platforms can deliver fair <em>opportunities</em> for attractive returns to both types of investors.</p>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Which include banks, pension funds, finance and insurance companies, endowments, asset managers, hedge funds, and others<a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>The pattern could also simply be due to differing risk preferences, but I think the structural/design explanations are more compelling. A more rigorous approach might exploit a policy change affecting market structure, but it’s unclear whether the relevant policies ever changed since the inception of the whole loans program in 2012.<a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>The script that does this is available on <a href="https://github.com/sirallen">my Github page</a>.<a href="#fnref3">↩</a></p></li>
+<li id="fn4"><p>From page 45 of <a href="http://ir.lendingclub.com/Cache/38285714.pdf?IID=4213397&amp;FID=38285714&amp;O=3&amp;OSID=9">Form 10-K</a><a href="#fnref4">↩</a></p></li>
+<li id="fn5"><p>The loss of future interest payments due to prepayment is at least partially offset by the ability to reinvest in new loans.<a href="#fnref5">↩</a></p></li>
+<li id="fn6"><p>When the whole loan program started in 2012, roughly 20 percent of loan offerings were allocated to institutional investors. In 2016, the fraction was as high as 85 percent.<a href="#fnref6">↩</a></p></li>
+</ol>
+</div>
