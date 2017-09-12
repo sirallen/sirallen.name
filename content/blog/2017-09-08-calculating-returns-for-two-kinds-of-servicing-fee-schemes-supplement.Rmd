@@ -9,7 +9,7 @@ tags: []
 
 _This post is a supplement to [A Note on Lending Club and Institutional Investment](https://sirallen.name/blog/note-on-lending-club/), which shows that institutional investors tend to fund loans that will be prepaid. Below is a short mathematical justification for why it makes sense for them to do so, given Lending Club's policy on servicing fees._
 
-Suppose we'd like to compute the internal rate of return (IRR) for a loan investment based on two different fee schemes. The first (call it $\mathcal{R}_1$) charges a fee $s_1$ in proportion to each period's outstanding principal balance, while the second ($\mathcal{R}_2$) charges a fee $s_2$ on all payments by the borrower. The borrower can "prepay" a loan with term $T$ by paying off the entire principal in $m < T$ months. Given initial principal $P_0$, monthly interest rate $r$, payment periods $m$, and payment sequence $\{A_i\}_{i=1}^m$, the principal amortizes according to
+Suppose we'd like to compute the internal rate of return^[The [internal rate of return](https://en.wikipedia.org/wiki/Internal_rate_of_return) is the discount rate at which the net present value of cash flows equals the initial capital.] (IRR) for a loan investment based on two different fee schemes. The first (call it $\mathcal{R}_1$) charges a fee $s_1$ in proportion to each period's outstanding principal balance, while the second ($\mathcal{R}_2$) charges a fee $s_2$ on all payments by the borrower. The borrower can "prepay" a loan with term $T$ by paying off the entire principal in $m < T$ months. Given initial principal $P_0$, monthly interest rate $r$, payment periods $m$, and payment sequence $\{A_i\}_{i=1}^m$, the principal amortizes according to
 $$
 P_i = (1+r)P_{i-1} - A_i = (1+r)^i P_0 - \sum_{j=1}^i (1+r)^{j-1} A_j
 $$
@@ -64,7 +64,7 @@ R2 = Vectorize(
   vectorize.args = 'm')
 ```
 
-The test case below is a loan with \$1000 principal (again, doesn't matter) and 15% annual interest rate, with fees $s_1$ and $s_2$ equal to 1.3% per annum and 1%, respectively. (According to Lending Club's policy for whole loans, $s_1$ is variable but 1.3% per annum is the _highest_ servicing fee it will charge.)
+The test case below is a loan with \$1000 principal (again, doesn't matter) and 15% annual interest rate, with fees $s_1$ and $s_2$ equal to 1.3% per annum and 1%, respectively. (According to Lending Club's policy for whole loans, $s_1$ is variable but 1.3% per annum is the _highest_ servicing fee it will charge. A lower $s_1$ will increase $R_1$, up to the interest rate when $s_1 = 0$.)
 ```{r}
 # Returns for institutional (whole loan) investors
 r_inst = R1(s=.013/12, P0=1000, r=.15/12, m=1:36)
@@ -79,7 +79,7 @@ legend('bottomright', c('R1','R2'), lty=c(1,2), col=c('black','red'),
        inset=.01)
 ```
 
-This isn't a complete picture since it doesn't account for returns from reinvestment (purchasing new Notes or whole loans after receiving each $A_i$, which can be done recursively). But it's clear that investors who are charged fees under scheme $\mathcal{R}_1$ can achieve a higher return with early payment, i.e., `$ \Delta_m R_1 < 0$`. In contrast, early payment is a suboptimal outcome under scheme $\mathcal{R}_2$.
+This isn't a complete picture since it doesn't account for returns from reinvestment (purchasing new Notes or whole loans after receiving each $A_i$, which can be done recursively). But it's clear that investors who are charged fees under scheme $\mathcal{R}_1$ can achieve a higher return with early payment, i.e., `$ \Delta_m R_1 < 0$`. The gains look small but may be significant for investors with very large portfolios. In contrast, early payment is a suboptimal outcome under scheme $\mathcal{R}_2$, and severely suboptimal for small $m$.
 
 We can't yet declare the matter settled as there's a potential problem with the above graph. Empirically, given $m$, the borrower tends to back-load prepayment to later periods, so the assumption of fixed payments isn't very realistic. (I checked this using Lending Club's payments data, but I'll defer the evidence to a future post.) A more realistic flow of payments would be constant installments for $m-1$ periods (computed with the formula for $A_i$ using the loan term $T$ in place of $m$, which gives the _minimum_ amount the borrower must pay each month), and one large payment to expunge all outstanding principal (with interest) in period $m$.
 
@@ -139,4 +139,6 @@ legend('bottomright', c('R1','R2'), lty=c(1,2), col=c('black','red'),
 ```
 
 With this more realistic payment sequence, the picture looks very similar---the endpoints of the two curves are the same as before since the two versions of $\{A_i\}$ are identical for $m = 1$ and $m = T$. An investor would still benefit from early payment under $\mathcal{R}_1$, though the "penalty" on returns of one additional month---corresponding to the slope of the curve---is slightly larger for small $m$. The curvature of $\mathcal{R}_2$ is also a little bit more pronounced; notice the shift in the point of intersection.
+
+Keep in mind that this example only evaluates ex-post returns; when an investor is actually choosing loans on Lending Club, $m$ and $\{A_i\}$ are unknown and there is non-negligible risk of borrower default. If prepayment and default are both correlated with variable $X$, then selecting on $X$ may diminish gains from prepayment for whole loan investors compared to above.
 
