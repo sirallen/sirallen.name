@@ -11,7 +11,7 @@ _This post is a supplement to [A Note on Lending Club and Institutional Investme
 
 Suppose we'd like to compute the internal rate of return^[The [internal rate of return](https://en.wikipedia.org/wiki/Internal_rate_of_return) is the discount rate at which the present value of cash flows equals the initial capital.] (IRR) for a loan investment based on two different fee schemes. The first (call it $\mathcal{R}_1$) charges a fee $s_1$ in proportion to each period's outstanding principal balance, while the second ($\mathcal{R}_2$) charges a fee $s_2$ on all payments by the borrower. The borrower can "prepay" a loan with term $T$ by paying off the entire principal in $m < T$ months. Given initial principal $P_0$, monthly interest rate $r$, payment periods $m$, and payment sequence $\{A_i\}_{i=1}^m$, the principal amortizes according to
 $$
-P_i = (1+r)P_{i-1} - A_i = (1+r)^i P_0 - \sum_{j=1}^i (1+r)^{j-1} A_j
+P_i = (1+r)P_{i-1} - A_i = (1+r)^i P_0 - \sum_{j=1}^i (1+r)^{i-j} A_j
 $$
 and the corresponding IRRs $R_1$ and $R_2$ satisfy
 $$
@@ -36,7 +36,7 @@ P_i = Vectorize(
   # Compute outstanding principal after i payments
   function(A, P0, r, i) {
     if (i==0) return(P0)
-    (1 + r)^i * P0 - A * sum((1 + r)^(0:(i-1)))
+    (1 + r)^i * P0 - A * sum((1 + r)^((i-1):0))
   },
   vectorize.args = 'i')
 
@@ -90,7 +90,7 @@ P_i = Vectorize(
   function(A_seq, P0, r, i) {
     # A_seq -- sequence of payments (length m)
     if (i==0) return(P0)
-    (1 + r)^i * P0 - sum(A_seq[1:i] * (1 + r)^(0:(i-1)))
+    (1 + r)^i * P0 - sum(A_seq[1:i] * (1 + r)^((i-1):0))
   },
   vectorize.args = 'i')
 

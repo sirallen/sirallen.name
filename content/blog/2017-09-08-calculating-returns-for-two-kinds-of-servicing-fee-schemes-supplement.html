@@ -11,7 +11,7 @@ tags: []
 
 <p><em>This post is a supplement to <a href="https://sirallen.name/blog/note-on-lending-club/">A Note on Lending Club and Institutional Investment</a>, which shows that institutional investors tend to fund loans that will be prepaid. Below is a short mathematical justification for why it makes sense for them to do so, given Lending Club’s policy on servicing fees.</em></p>
 <p>Suppose we’d like to compute the internal rate of return<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> (IRR) for a loan investment based on two different fee schemes. The first (call it <span class="math inline">\(\mathcal{R}_1\)</span>) charges a fee <span class="math inline">\(s_1\)</span> in proportion to each period’s outstanding principal balance, while the second (<span class="math inline">\(\mathcal{R}_2\)</span>) charges a fee <span class="math inline">\(s_2\)</span> on all payments by the borrower. The borrower can “prepay” a loan with term <span class="math inline">\(T\)</span> by paying off the entire principal in <span class="math inline">\(m &lt; T\)</span> months. Given initial principal <span class="math inline">\(P_0\)</span>, monthly interest rate <span class="math inline">\(r\)</span>, payment periods <span class="math inline">\(m\)</span>, and payment sequence <span class="math inline">\(\{A_i\}_{i=1}^m\)</span>, the principal amortizes according to <span class="math display">\[
-P_i = (1+r)P_{i-1} - A_i = (1+r)^i P_0 - \sum_{j=1}^i (1+r)^{j-1} A_j
+P_i = (1+r)P_{i-1} - A_i = (1+r)^i P_0 - \sum_{j=1}^i (1+r)^{i-j} A_j
 \]</span> and the corresponding IRRs <span class="math inline">\(R_1\)</span> and <span class="math inline">\(R_2\)</span> satisfy <span class="math display">\[
 P_0 = \sum_{i=1}^m \left(1 + \frac{R_1}{12} \right)^{-i} (A_i - s_1 P_i) \\
 P_0 = (1 - s_2) \sum_{i=1}^m \left(1 + \frac{R_2}{12} \right)^{-i} A_i.
@@ -29,7 +29,7 @@ P_i = Vectorize(
   # Compute outstanding principal after i payments
   function(A, P0, r, i) {
     if (i==0) return(P0)
-    (1 + r)^i * P0 - A * sum((1 + r)^(0:(i-1)))
+    (1 + r)^i * P0 - A * sum((1 + r)^((i-1):0))
   },
   vectorize.args = &#39;i&#39;)
 
@@ -76,7 +76,7 @@ legend(&#39;bottomright&#39;, c(&#39;R1&#39;,&#39;R2&#39;), lty=c(1,2), col=c(&#
   function(A_seq, P0, r, i) {
     # A_seq -- sequence of payments (length m)
     if (i==0) return(P0)
-    (1 + r)^i * P0 - sum(A_seq[1:i] * (1 + r)^(0:(i-1)))
+    (1 + r)^i * P0 - sum(A_seq[1:i] * (1 + r)^((i-1):0))
   },
   vectorize.args = &#39;i&#39;)
 
