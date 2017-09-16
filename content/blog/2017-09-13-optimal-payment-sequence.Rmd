@@ -1,5 +1,5 @@
 ---
-title: Optimal Payment Sequence
+title: Optimal Payment Sequence (Supplement)
 author: Allen Sirolly
 date: '2017-09-16'
 slug: optimal-payment-sequence
@@ -7,7 +7,7 @@ categories: []
 tags: []
 ---
 
-_This post is an extension of [Calculating Returns for Two Kinds of Servicing Fee Schemes](https://sirallen.name/blog/calculating-returns-for-two-kinds-of-servicing-fee-schemes-supplement/)._
+_This post is an supplement to [Calculating Returns for Two Kinds of Servicing Fee Schemes](https://sirallen.name/blog/calculating-returns-for-two-kinds-of-servicing-fee-schemes-supplement/)._
 
 In the previous post I explored the question of why, given one of two servicing fee schemes, an investor in Lending Club loans may or may not desire early payment by the borrower. I assumed the payment sequence $\{A_i\}$ to make my case, but it's easy to imagine the more general question of, What is the best $\{A_i\}$ an investor could hope for, given $m$? From an investing standpoint, this isn't really a useful question to ask---after all, investors don't get to choose how the borrower repays. But it sounds like it might be an interesting math problem, so why not?
 
