@@ -109,9 +109,9 @@ legend('topright', c('(1) Constant A', '(2) Large A_m', '(3) Large A_1'),
 
 Sequence (3) is rather extreme in that payment is front-loaded as much as possible without violating any of the constraints. As it turns out, it is also optimal. To prove it, I'll use (3) as a starting point and show that moving part of payment $A_1$ downstream to $A_j$ (the only permissible action since only $A_1$ is not already bound by a constraint) cannot increase $R_1$. Since any permissible $\{A_i\}$ (given $m$) can be constructed starting from (3) and redistributing payment from $A_1$, it will follow that (3) must be the optimal sequence.
 
-Let me first introduce the notation $dX/dA_{i \rightarrow j}$ to describe the marginal change in $X$ from moving part of $A_i$ to $A_j$, holding all other payments fixed. The claim, then, is that $dR_1/dA_{1 \rightarrow j} \leq 0$ for all $1 < j \leq m$.
+Let me first introduce the notation $dX/dA_{i \rightarrow j}$ to describe the marginal change in $X$ from transferring a marginal amount of $A_i$ to $A_j$, holding all other payments fixed, and in such a way that the constraint $P_m = 0$ remains satisfied. The claim, then, is that $dR_1/dA_{1 \rightarrow j} \leq 0$ for all $1 < j \leq m$.
 
-Importantly, $A_{i \rightarrow j}$ cannot be 1:1 due to both compounding and the constraint $P_m = 0$. In particular, while $dA_i/dA_{i \rightarrow j} = -1$,
+Importantly, $A_{i \rightarrow j}$ cannot be 1:1 due to compounding. In particular, while $dA_i/dA_{i \rightarrow j} = -1$,
 $$
 \frac{dA_j}{dA_{i \rightarrow j}} = (1+r) \frac{dP_{j-1}}{dA_i} = (1 + r)^{j-i}.
 $$
