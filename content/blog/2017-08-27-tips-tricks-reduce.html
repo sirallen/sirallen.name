@@ -31,7 +31,7 @@ Reduce(function(s, x_) (s + x_)*(x_ != 0), x, accumulate=TRUE)
 <p>Since we didn’t specify <code>init</code> as an argument, the first value of <code>x</code> serves the role of the initial state. To get the “next” value of the state, <code>Reduce</code> computes <code>$ f(1, 2) = (1 + 2)*(2 \neq 0) = 3 $</code>, then <code>$ f(3, 4) = (3 + 4)*(4 \neq 0) = 7 $</code> and so on, producing the printed output.</p>
 <p>How about a cumulative mean? We can use the formula for an <em>online update</em> of the mean, which is useful for large data when observations are encountered sequentially: <span class="math display">\[
 \bar{x}_{n+1} = \frac{n}{n+1} \bar{x}_n + \frac{1}{n+1} x_{n+1}.
-\]</span> Note that <code>Reduce</code> will need to be able to access the value <span class="math inline">\(n\)</span>, which can be accomplished by wrapping the computation in a function and using the upstream assignment operator <code>&lt;&lt;-</code>:</p>
+\]</span> Note that <code>Reduce</code> will need to be able to access and update the value <span class="math inline">\(n\)</span>, which can be accomplished by wrapping the computation in a function and using the upstream assignment operator <code>&lt;&lt;-</code>:</p>
 <pre class="r"><code>cummean &lt;- function(x) {
   n &lt;- 0
   Reduce(function(s, x_) {n &lt;&lt;- n + 1; n/(n + 1) * s + x_/(n + 1)}, x, accumulate=TRUE)
