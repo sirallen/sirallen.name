@@ -46,6 +46,21 @@ Reduce(function(s, x_) (s + x_)*(x_ != 0), x, accumulate=TRUE)
 ```
 Since we didn't specify `init` as an argument, the first value of `x` serves the role of the initial state. To get the "next" value of the state, `Reduce` computes `$ f(1, 2) = (1 + 2)*(2 \neq 0) = 3 $`, then `$ f(3, 4) = (3 + 4)*(4 \neq 0) = 7 $` and so on, producing the printed output.
 
+What about a cumulative mean? We can use the formula for an _online update_ of the mean, which is useful for large data when observations are encountered sequentially:
+$$
+\bar{x}_n = \frac{n-1}{n} \bar{x}_{n-1} + \frac{1}{n} x_n.
+$$
+Note that `Reduce` will need to be able to access the value $n$, which can be accomplished by wrapping the computation in a function and using the upstream assignment operator `<<-`:
+```{r}
+cummean <- function(x) {
+  n <- 1
+  Reduce(function(s, x_) {n <<- n + 1; (n - 1)/n * s + x_ / n}, x, accumulate=TRUE)
+}
+
+(x <- round(rnorm(15), 2))
+round(cummean(x), 2)
+```
+
 We can also use `Reduce` to implement a version of `zoo::na.locf` ("last observation carry forward"), which replaces `NA` with the last non-`NA` value:
 
 ```{r}
