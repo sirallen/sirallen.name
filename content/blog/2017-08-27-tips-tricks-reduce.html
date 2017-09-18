@@ -59,7 +59,7 @@ Reduce(function(s, x_) if (is.na(x_)) s else x_, x, accumulate=TRUE)
 Reduce(function(s, a_) as.integer(s + a_ &gt; 0), A, init=1L, accumulate=TRUE)
 ##  [1] 1 0 1 1 1 0 0 0 0 1 1 0 1 1 0</code></pre>
 <p>I’ve used this as a method to strip away blocks<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a> of unnecessary text (headers, footers, etc.) from multi-page PDFs after text conversion. All I need to do is mark the rows where the useful data and the useless text begin, then <code>Reduce</code> and drop.</p>
-<p>All of the examples so far have used integer states and inputs, but it’s straightforward to work with more complex object types like matrices and data frames. We could use <code>Reduce</code> to merge a list of data frames (a common data analysis task), or to simulate sample paths for a multivariate time series where the state is a vector <code>$S$</code>.</p>
+<p>All of the examples so far have used scalar (really, atomic vectors of length 1) states and inputs, but it’s straightforward to work with more complex object types like matrices and data frames. We could use <code>Reduce</code> to merge a list of data frames (a common data analysis task), or to simulate sample paths for a multivariate time series where the state is a vector <code>$S$</code>.</p>
 <p>There’s even a way to make <code>Reduce</code> handle multiple input arguments. Say we want to recursively compute <code>$ s' = a_1 \times s + a_2 $</code> given a sequence of <code>$ (a_1, a_2) $</code> pairs. We can use <code>Map</code> (another useful functional) to combine <code>A1</code> and <code>A2</code> pairwise and then use standard indexing to access the different inputs:</p>
 <pre class="r"><code>A1 &lt;- rnorm(10)
 A2 &lt;- rnorm(10)

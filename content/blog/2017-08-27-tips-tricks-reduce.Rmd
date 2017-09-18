@@ -83,7 +83,7 @@ Reduce(function(s, a_) as.integer(s + a_ > 0), A, init=1L, accumulate=TRUE)
 
 I've used this as a method to strip away blocks^[I.e., multiple lines in a data frame after using `readLines`] of unnecessary text (headers, footers, etc.) from multi-page PDFs after text conversion. All I need to do is mark the rows where the useful data and the useless text begin, then `Reduce` and drop.
 
-All of the examples so far have used integer states and inputs, but it's straightforward to work with more complex object types like matrices and data frames. We could use `Reduce` to merge a list of data frames (a common data analysis task), or to simulate sample paths for a multivariate time series where the state is a vector `$S$`.
+All of the examples so far have used scalar (really, atomic vectors of length 1) states and inputs, but it's straightforward to work with more complex object types like matrices and data frames. We could use `Reduce` to merge a list of data frames (a common data analysis task), or to simulate sample paths for a multivariate time series where the state is a vector `$S$`.
 
 There's even a way to make `Reduce` handle multiple input arguments. Say we want to recursively compute `$ s' = a_1 \times s + a_2 $` given a sequence of `$ (a_1, a_2) $` pairs. We can use `Map` (another useful functional) to combine `A1` and `A2` pairwise and then use standard indexing to access the different inputs:
 ```{r}
