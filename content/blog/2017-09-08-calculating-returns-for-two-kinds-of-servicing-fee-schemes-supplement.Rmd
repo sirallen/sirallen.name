@@ -9,20 +9,25 @@ tags: []
 
 _This post is a supplement to [A Note on Lending Club and Institutional Investment](https://sirallen.name/blog/note-on-lending-club/), which shows that institutional investors tend to fund loans that will be prepaid. Below is a short mathematical justification for why it makes sense for them to do so, given Lending Club's policy on servicing fees._
 
-Suppose we'd like to compute the internal rate of return^[The [internal rate of return](https://en.wikipedia.org/wiki/Internal_rate_of_return) is the interest rate at which the present value of cash flows equals the initial capital. I elected to use a nominal rate, but one could just as well use the effective rate. They're related by $(1 + R_{nom}/12)^{12} = 1 + R_{eff}$.] (IRR) for a loan investment based on two different fee schemes. The first (call it $\mathcal{R}_1$) charges a fee $s_1$ in proportion to each period's outstanding principal balance, while the second ($\mathcal{R}_2$) charges a fee $s_2$ on all payments by the borrower. The borrower can "prepay" a loan with term $T$ by paying off the entire principal in $m < T$ months. Given initial principal $P_0$, monthly interest rate $r$, payment periods $m$, and payment sequence $\{A_i\}_{i=1}^m$, the principal amortizes according to
+Suppose we'd like to compute the internal rate of return^[The [internal rate of return](https://en.wikipedia.org/wiki/Internal_rate_of_return) is the interest rate at which the present value of cash flows equals the initial capital. I elected to use a nominal rate, but one could just as well use the effective rate. They're related by $(1 + R_{nom}/12)^{12} = 1 + R_{eff}$.] (IRR) for a loan investment based on two different fee schemes. The first (call it $\mathcal{R}_1$) charges a fee $s_1$ in proportion to each period's outstanding principal balance, while the second ($\mathcal{R}_2$) charges a fee $s_2$ on all payments by the borrower, up to the contractual monthly payment in the first 12 months.^[I'll subsequently refer to this as _prepayment protection_. See [https://www.lendingclub.com/public/rates-and-fees.action](https://www.lendingclub.com/public/rates-and-fees.action).] ($\mathcal{R}_1$ and $\mathcal{R}_2$ represent fees levied on insitutional (whole loan) investors and retail (Note) investors, respectively.) The borrower can "prepay" a loan with term $T$ by paying off the entire principal in $m < T$ months. Given initial principal $P_0$, monthly interest rate $r$, payment periods $m$, and payment sequence $\{A_i\}_{i=1}^m$, the principal amortizes according to
 $$
 P_i = (1+r)P_{i-1} - A_i = (1+r)^i P_0 - \sum_{j=1}^i (1+r)^{i-j} A_j
 $$
 and the corresponding IRRs $R_1$ and $R_2$ satisfy
 $$
 P_0 = \sum_{i=1}^m \left(1 + \frac{R_1}{12} \right)^{-i} (A_i - s_1 P_i) \\
-P_0 = (1 - s_2) \sum_{i=1}^m \left(1 + \frac{R_2}{12} \right)^{-i} A_i.
+P_0 = \sum_{i=1}^m \left(1 + \frac{R_2}{12} \right)^{-i} \big(A_i - s_2 Y_i \big),
 $$
+where $Y_i = \min(I, A_i)$ if $i \leq 12$ and $A_i$ otherwise, and $I$ is the _installment_ (or minimum payment) given by
+$$
+I = P_0 \frac{r(1+r)^T}{(1+r)^T - 1}.
+$$
+
 First assuming constant monthly payments given $m$,
 $$
 A_i = P_0 \frac{r(1+r)^m}{(1+r)^m - 1} \equiv A,
 $$
-we can use the following code to see how $R_1$ and $R_2$ vary with $m$. Note that by construction, i.e., by the choice of $\{A_i\}$, we have $P_m = 0$. Also note that the result doesn't depend on $P_0$ (it can be normalized to 1), though I've kept it to make the calculations more explicit.
+we can use the following code to see how $R_1$ and $R_2$ vary with $m$. Note that by construction, i.e., by the choice of $\{A_i\}$, we have $P_m = 0$. Also note that the result doesn't depend on $P_0$, though I've kept it to make the calculations more explicit.
 
 ```{r}
 A = function(P0, r, m) {
@@ -56,15 +61,17 @@ R2 = Vectorize(
   function(s, P0, r, m) {
     # s  -- service fee rate (monthly, on payments)
     # P0, r, m -- args to A()
+    A_ = rep(A(P0, r, m), m)
+    Y_ = replace(A_, 1:min(m, 12), A(P0, r, 36))
     fun = function(z) (P0 - sum((1 + z/12)^-(1:m) *
-                                  (1 - s) * A(P0, r, m)))^2
+                                  (A_ - s * Y_)))^2
     # solve for IRR
     optimize(fun, interval=c(0, .5))$minimum
   },
   vectorize.args = 'm')
 ```
 
-The test case below is a loan with \$1000 principal (again, doesn't matter) and 15% annual interest rate, with fees $s_1$ and $s_2$ equal to 1.3% per annum and 1%, respectively. (According to Lending Club's policy for whole loans, $s_1$ is variable but 1.3% per annum is the _highest_ servicing fee it will charge. A lower $s_1$ will increase $R_1$, up to the interest rate when $s_1 = 0$.)
+The test case below is a loan with \$1000 principal and 15% annual interest rate, with fees $s_1$ and $s_2$ equal to 1.3% per annum and 1%, respectively. (According to Lending Club's policy for whole loans, $s_1$ is variable but 1.3% per annum is the _highest_ servicing fee it will charge. A lower $s_1$ will increase $R_1$, up to the interest rate when $s_1 = 0$.)
 ```{r}
 # Returns for institutional (whole loan) investors
 r_inst = R1(s=.013/12, P0=1000, r=.15/12, m=1:36)
@@ -75,13 +82,13 @@ r_ret  = R2(s=.01, P0=1000, r=.15/12, m=1:36)
 matplot(1:36, cbind(r_inst, r_ret), las=1, type='l',
         xlab='Months until full payment (m)',
         ylab='Internal rate of return')
-legend('bottomright', c('R1','R2'), lty=c(1,2), col=c('black','red'),
+legend('topright', c('R1','R2'), lty=c(1,2), col=c('black','red'),
        inset=.01)
 ```
 
-This isn't a complete picture since it doesn't account for returns from reinvestment (purchasing new Notes or whole loans after receiving each $A_i$, which can be done recursively). But it's clear that investors who are charged fees under scheme $\mathcal{R}_1$ can achieve a higher return with early payment, i.e., `$ \Delta_m R_1 < 0$`. The gains look small but may be significant for investors with very large portfolios. In contrast, early payment is a suboptimal outcome under scheme $\mathcal{R}_2$, and severely suboptimal for small $m$.
+This isn't a complete picture since it doesn't account for returns from reinvestment (purchasing new Notes or whole loans after receiving each $A_i$, which can be done recursively). But it's clear that investors who are charged fees under scheme $\mathcal{R}_1$ can achieve a higher return with early payment, i.e., `$ \Delta_m R_1 < 0$`. The gains are relatively small but may be significant for investors with very large portfolios. With prepayment protection, early payment is also the most desirable outcome under scheme $\mathcal{R}_2$, although the curve is upward-sloping for $m > 17$.
 
-We can't yet declare the matter settled as there's a potential problem with the above graph. Empirically, given $m$, the borrower tends to back-load prepayment to later periods, so the assumption of fixed payments isn't very realistic. (I checked this using Lending Club's payments data, but I'll defer the evidence to a future post.) A more realistic flow of payments would be constant installments for $m-1$ periods (computed with the formula for $A_i$ using the loan term $T$ in place of $m$, which gives the _minimum_ amount the borrower must pay each month), and one large payment to expunge all outstanding principal (with interest) in period $m$.
+We can't yet declare the matter settled as there's a potential problem with the above graph. Empirically, given $m$, the borrower tends to back-load prepayment to later periods, so the assumption of fixed payments isn't very realistic. (I checked this using Lending Club's payments data, but I'll defer the evidence to a future post.) A more realistic flow of payments would be constant installments for $m-1$ periods and one large payment to expunge all outstanding principal (with interest) in period $m$.
 
 It's straightforward to modify the functions above to accomodate non-constant payments:
 ```{r}
@@ -118,8 +125,9 @@ R2 = Vectorize(
     # s  -- service fee rate (monthly, on payments)
     # P0, r, m -- args to A()
     A_seq = gen_A_seq(P0, r, m)
+    Y_seq = replace(A_seq, 1:min(m, 12), A(P0, r, 36))
     fun = function(z) (P0 - sum((1 + z/12)^-(1:m) *
-                                  (1 - s) * A_seq))^2
+                                  (A_seq - s * Y_seq)))^2
     # solve for IRR
     optimize(fun, interval=c(0, .5))$minimum
   },
@@ -134,11 +142,36 @@ r_ret  = R2(s=.01, P0=1000, r=.15/12, m=1:36)
 matplot(1:36, cbind(r_inst, r_ret), las=1, type='l',
         xlab='Months until full payment (m)',
         ylab='Internal rate of return')
-legend('bottomright', c('R1','R2'), lty=c(1,2), col=c('black','red'),
+legend('topright', c('R1','R2'), lty=c(1,2), col=c('black','red'),
        inset=.01)
 ```
 
-With this more realistic payment sequence, the picture looks very similar---the endpoints of the two curves are the same as before since the two versions of $\{A_i\}$ are identical for $m = 1$ and $m = T$. An investor would still benefit from early payment under $\mathcal{R}_1$, though the "penalty" on returns of one additional month---corresponding to the slope of the curve---is slightly larger for small $m$. The curvature of $\mathcal{R}_2$ is also a little bit more pronounced; notice the shift in the point of intersection.
+With this more realistic payment sequence, an investor will still desire early payment under $\mathcal{R}_1$, although he will face strictly lower returns for all $m \notin \{1, 36\}$. In particular, the slope of the curve $R_1(m)$ is even more severe for small $m$, corresponding to a larger "penalty" on returns of one additional month. In contrast, returns are higher under $\mathcal{R}_2$ for $m \leq 12$, although $m > 13$ yields lower returns since prepayment protection will not extend to the large final payment. Note that the endpoints of the two curves are the same as before since the two versions of $\{A_i\}$ are identical for $m = 1$ and $m = T$.
 
-Keep in mind that this example only evaluates ex-post returns; when an investor is actually choosing loans on Lending Club, $m$ and $\{A_i\}$ are unknown and there is non-negligible risk of borrower default. If prepayment and default are both correlated with variable $X$, then selecting on $X$ may diminish gains from prepayment for whole loan investors compared to above.
+To give a better sense of the role of prepayment protection, I'll add a line for a scheme (call it $\mathcal{R}_2^a$) which charges a 1% fee on all borrower payments. The difference is stark:
+```{r}
+R2a = Vectorize(
+  function(s, P0, r, m=36) {
+    # s  -- service fee rate (monthly, on payments)
+    # P0, r, m -- args to A()
+    A_seq = gen_A_seq(P0, r, m)
+    fun = function(z) (P0 - sum((1 + z/12)^-(1:m) *
+                                  (1 - s) * A_seq))^2
+    # solve for IRR
+    optimize(fun, interval=c(0, .5))$minimum
+  },
+  vectorize.args = 'm')
+
+# Returns for retail (Note) investors, no prepayment protection
+r_ret_no_protection = R2a(s=.01, P0=1000, r=.15/12, m=1:36)
+
+matplot(1:36, cbind(r_inst, r_ret, r_ret_no_protection), las=1, type='l',
+        col=c('black','red','darkred'),
+        xlab='Months until full payment (m)',
+        ylab='Internal rate of return')
+legend('bottomright', c('R1','R2','R2a'), lty=1:3, col=c('black','red','darkred'),
+       inset=.01)
+```
+
+Keep in mind that these examples only evaluate ex-post returns; when an investor is actually choosing loans on Lending Club, $m$ and $\{A_i\}$ are unknown and there is non-negligible risk of borrower default. If prepayment and default are both correlated with variable $X$, then selecting on $X$ may diminish gains from prepayment compared to above.
 

@@ -9,7 +9,7 @@ tags: []
 
 _This post is a supplement to [Calculating Returns for Two Kinds of Servicing Fee Schemes](https://sirallen.name/blog/calculating-returns-for-two-kinds-of-servicing-fee-schemes-supplement/)._
 
-In the previous post I explored the question of why, given one of two servicing fee schemes, an investor in Lending Club loans may or may not desire early payment by the borrower. I assumed the payment sequence $\{A_i\}$ to make my case, but it's easy to imagine the more general question of, What is the best $\{A_i\}$ an investor could hope for, given $m$? From an investing standpoint, this isn't really a useful question to ask---after all, investors don't get to choose how the borrower repays. But it sounds like it might be an interesting math problem, so why not?
+In the previous post I explored the question of why an investor in Lending Club loans may or may not desire early payment by the borrower, depending on how servicing fees are levied. I assumed the payment sequence $\{A_i\}$ to make my case, but it's easy to imagine the more general question of, What is the best $\{A_i\}$ an investor could hope for, given $m$? From an investing standpoint, this isn't really a useful question to ask---after all, investors don't get to choose how the borrower repays. But it sounds like it might be an interesting math problem, so why not?
 
 Formally, given $(P_0, r, m, T)$ we'd like to know what sequence of payments $\{A_i\}_{i=1}^m$ maximizes the investor's (nominal) IRR, where principal amortizes according to
 $$
