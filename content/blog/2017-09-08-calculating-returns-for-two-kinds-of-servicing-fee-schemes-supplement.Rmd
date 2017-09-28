@@ -23,7 +23,7 @@ $$
 I = P_0 \frac{r(1+r)^T}{(1+r)^T - 1}.
 $$
 
-Note that in the amortization formula, $P_i$ represents the principal at the "end" of period $i$, i.e., after payment $A_i$ is made. I deliberately modeled it this way since $\mathcal{R}_1$ fees are calculated on end-of-month principal, per Lending Club policy.^[Although I suppose this would really be dependent on the timing of loan origination. In any case, realize that I'm abstracting away some of the nonessential details.] I also assume that payments are large enough to at least cover interest, i.e., $A_i \geq rP_i$, as the principal can never increase.
+Note that in the amortization formula, $P_i$ represents the principal at the "end" of period $i$, i.e., after payment $A_i$ is made. I deliberately modeled it this way since $\mathcal{R}_1$ fees are calculated on end-of-month principal, per Lending Club policy.^[Although I suppose this would really be dependent on the timing of loan origination. In any case, realize that I'm abstracting away some of the nonessential details.] I also assume that payments are large enough to at least cover interest, i.e., $A_i \geq rP_{i-1}$, as the principal can never increase.
 
 Now all that remains is to specify $\{A_i\}$. First assuming constant monthly payments given $m$,
 $$
