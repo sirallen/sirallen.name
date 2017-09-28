@@ -146,7 +146,7 @@ legend('topright', c('R1','R2'), lty=c(1,2), col=c('black','red'),
        inset=.01)
 ```
 
-With this more realistic payment sequence, an investor will still desire early payment under $\mathcal{R}_1$, although he will face strictly lower returns for all $m \notin \{1, 36\}$. In particular, the slope of the curve $R_1(m)$ is even more severe for small $m$, corresponding to a larger "penalty" on returns of one additional month. In contrast, returns are higher under $\mathcal{R}_2$ for $m \leq 12$, although $m > 13$ yields lower returns since prepayment protection will not extend to the large final payment. Note that the endpoints of the two curves are the same as before since the two versions of $\{A_i\}$ are identical for $m = 1$ and $m = T$.
+With this more realistic payment sequence, an investor will still desire early payment under $\mathcal{R}_1$, although he will face strictly lower returns for all $m \notin \{1, 36\}$. In particular, the slope of the curve $R_1(m)$ is even more severe for small $m$, corresponding to a larger "penalty" on returns of one additional month. In contrast, returns are higher under $\mathcal{R}_2$ for $m \leq 12$, although $m > 12$ yields lower returns since prepayment protection will not extend to the large final payment. Note that the endpoints of the two curves are the same as before since the two versions of $\{A_i\}$ are identical for $m = 1$ and $m = T$.
 
 To give a better sense of the role of prepayment protection, I'll add a line for a scheme (call it $\mathcal{R}_2^a$) which charges a 1% fee on all borrower payments. The difference is stark:
 ```{r}
