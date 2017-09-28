@@ -54,7 +54,10 @@ Note that `Reduce` will need to be able to access and update the value $n$, whic
 ```{r}
 cummean <- function(x) {
   n <- 0
-  Reduce(function(s, x_) {n <<- n + 1; n/(n + 1) * s + x_/(n + 1)}, x, accumulate=TRUE)
+  Reduce(function(s, x_) {
+    n <<- n + 1
+    n/(n + 1) * s + x_/(n + 1)
+  }, x, accumulate=TRUE)
 }
 
 (x <- round(rnorm(15), 2))

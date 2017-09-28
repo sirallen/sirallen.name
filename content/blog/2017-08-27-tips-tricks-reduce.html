@@ -34,7 +34,10 @@ Reduce(function(s, x_) (s + x_)*(x_ != 0), x, accumulate=TRUE)
 \]</span> Note that <code>Reduce</code> will need to be able to access and update the value <span class="math inline">\(n\)</span>, which can be accomplished by wrapping the computation in a function and using the upstream assignment operator <code>&lt;&lt;-</code>:</p>
 <pre class="r"><code>cummean &lt;- function(x) {
   n &lt;- 0
-  Reduce(function(s, x_) {n &lt;&lt;- n + 1; n/(n + 1) * s + x_/(n + 1)}, x, accumulate=TRUE)
+  Reduce(function(s, x_) {
+    n &lt;&lt;- n + 1
+    n/(n + 1) * s + x_/(n + 1)
+  }, x, accumulate=TRUE)
 }
 
 (x &lt;- round(rnorm(15), 2))
