@@ -41,8 +41,6 @@ msa10.16[, `:=`(
     , c(&#39;POP&#39;,&#39;YEAR&#39;,&#39;MSA&#39;):= lapply(.SD, as.integer),
     .SDcols=c(&#39;POP&#39;,&#39;YEAR&#39;,&#39;MSA&#39;)]
 
-head(msa10.16, 20)
-
 county00.09 =
   GET(
     url = paste0(&#39;https://api.census.gov/data/2000/pep/int_population?&#39;,
@@ -61,9 +59,7 @@ county00.09[, `:=`(
   DATE_DESC = NULL)][
     # convert columns char --&gt; int
     , c(&#39;POP&#39;,&#39;YEAR&#39;):= lapply(.SD, as.integer),
-    .SDcols=c(&#39;POP&#39;,&#39;YEAR&#39;)]
-
-head(county00.09, 20)</code></pre>
+    .SDcols=c(&#39;POP&#39;,&#39;YEAR&#39;)]</code></pre>
 <p>The correspondence between counties and MSAs prior to 2010 is established in a set of <a href="https://www.census.gov/geographies/reference-files/time-series/demo/metro-micro/historical-delineation-files.html">historical delineation files</a>. There is a delineation file for each year from 2003-2009 (updated in November or December) and at less frequent intervals before 2003. The implication is that MSA definitions can change over time, perhaps as urban centers see their spheres of influence expand or contract, or as micropolitan statistical areas grow large enough to merit classification as metropolitan areas.<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a></p>
 <p>These files aren’t in the API, so we’ll need to download and parse them separately. (This processing step is kind of tangential to the task at hand, so I’ve hidden the function <code>parse_delin_file</code> from view; it’s in the raw R file I linked to above.) Let’s start from 2003, which will yield us 14 years of population estimates. This should be enough to make a compelling graphic.<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a></p>
 <pre class="r"><code>delin_files = paste0(
@@ -206,7 +202,7 @@ polyfit = plotData[MSA.short!=&#39;New Orleans, LA&#39;, .(
 # Merge label
 plotData = plotData[, .(YEAR=as.double(YEAR), MSA.short, label)][
   polyfit, on=.(YEAR, MSA.short)]</code></pre>
-<p>Now we’re ready to plot the data! We can assign a <code>ggplot</code> object to a variable for each Census region and pass these objects to <code>grid.arrange</code> to organize into a 2-by-2 panel.</p>
+<p>Now we’re ready to plot the data! We can assign a <code>ggplot</code> object to a variable for each Census region and pass these objects to <code>gridExtra::grid.arrange</code> to organize into a 2-by-2 panel. (Perhaps this could just as well be accomplished with <code>ggplot2::facet_wrap</code>.) Note that the use of the <code>direction</code> argument in <code>ggrepel::geom_text_repel</code> currently requires the development version of the package, which can be installed from GitHub.</p>
 <pre class="r"><code>for (region in c(&#39;Northeast&#39;,&#39;Midwest&#39;,&#39;South&#39;,&#39;West&#39;)) {
   assign(paste0(&#39;p.&#39;,region),
          ggplot(plotData[MSA.short!=&#39;New Orleans, LA&#39;],

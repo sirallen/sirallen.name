@@ -48,8 +48,6 @@ msa10.16[, `:=`(
     , c('POP','YEAR','MSA'):= lapply(.SD, as.integer),
     .SDcols=c('POP','YEAR','MSA')]
 
-head(msa10.16, 20)
-
 county00.09 =
   GET(
     url = paste0('https://api.census.gov/data/2000/pep/int_population?',
@@ -69,8 +67,6 @@ county00.09[, `:=`(
     # convert columns char --> int
     , c('POP','YEAR'):= lapply(.SD, as.integer),
     .SDcols=c('POP','YEAR')]
-
-head(county00.09, 20)
 ```
 
 ```{r echo=FALSE}
@@ -247,7 +243,7 @@ plotData = plotData[, .(YEAR=as.double(YEAR), MSA.short, label)][
 
 ```
 
-Now we're ready to plot the data! We can assign a `ggplot` object to a variable for each Census region and pass these objects to `grid.arrange` to organize into a 2-by-2 panel.
+Now we're ready to plot the data! We can assign a `ggplot` object to a variable for each Census region and pass these objects to `gridExtra::grid.arrange` to organize into a 2-by-2 panel. (Perhaps this could just as well be accomplished with `ggplot2::facet_wrap`.) Note that the use of the `direction` argument in `ggrepel::geom_text_repel` currently requires the development version of the package, which can be installed from GitHub.
 ```{r, fig.width=12, fig.height=15}
 for (region in c('Northeast','Midwest','South','West')) {
   assign(paste0('p.',region),
