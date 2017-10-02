@@ -153,8 +153,8 @@ msa03.16 = msa03.16[msa03.16[, .I[.N==14], by=&#39;MSA&#39;]$V1]</code></pre>
   by=&#39;MSA&#39;]
 
 with(msa03.16[MSA==18880], {
-  matplot(YEAR, cbind(POP, POP_Adj), type=&#39;l&#39;,
-          ylab=&#39;Population&#39;, main=MSA_NAME[1])
+  matplot(YEAR, cbind(POP, POP_Adj)/1000, type=&#39;l&#39;, las=1,
+          ylab=&#39;Population (thousands)&#39;, main=MSA_NAME[1])
   legend(&#39;topleft&#39;, c(&#39;POP&#39;, &#39;POP_Adj&#39;), lty=1:2, col=c(&#39;black&#39;,&#39;red&#39;),
          inset=.01)
 })</code></pre>
@@ -217,8 +217,8 @@ plotData = plotData[, .(YEAR=as.double(YEAR), MSA.short, label)][
            geom_line(data = plotData[MSA.short==&#39;MSA.Average&#39;]) +
            geom_text_repel(
              data = plotData[(Region==region | is.na(Region)) &amp; YEAR==max(YEAR)],
-             aes(label = label), size=1.5, box.padding=unit(0,&#39;lines&#39;), nudge_x=.5,
-             direction=&#39;y&#39;) +
+             aes(label = label), size=1.5, box.padding=0,
+             direction=&#39;y&#39;, xlim=c(2016.1, NA)) +
            scale_color_manual(values = c(black=&#39;black&#39;, red=&#39;red&#39;)) +
            labs(title = bquote(italic(.(region))),
                 x=&#39;&#39;, y=&#39;Population Index (Base Year = 2003)&#39;) +

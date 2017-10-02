@@ -180,8 +180,8 @@ msa03.16[, POP_Adj:= ifelse(YEAR < 2010, POP,
   by='MSA']
 
 with(msa03.16[MSA==18880], {
-  matplot(YEAR, cbind(POP, POP_Adj), type='l',
-          ylab='Population', main=MSA_NAME[1])
+  matplot(YEAR, cbind(POP, POP_Adj)/1000, type='l', las=1,
+          ylab='Population (thousands)', main=MSA_NAME[1])
   legend('topleft', c('POP', 'POP_Adj'), lty=1:2, col=c('black','red'),
          inset=.01)
 })
@@ -259,8 +259,8 @@ for (region in c('Northeast','Midwest','South','West')) {
            geom_line(data = plotData[MSA.short=='MSA.Average']) +
            geom_text_repel(
              data = plotData[(Region==region | is.na(Region)) & YEAR==max(YEAR)],
-             aes(label = label), size=1.5, box.padding=unit(0,'lines'), nudge_x=.5,
-             direction='y') +
+             aes(label = label), size=1.5, box.padding=0,
+             direction='y', xlim=c(2016.1, NA)) +
            scale_color_manual(values = c(black='black', red='red')) +
            labs(title = bquote(italic(.(region))),
                 x='', y='Population Index (Base Year = 2003)') +
