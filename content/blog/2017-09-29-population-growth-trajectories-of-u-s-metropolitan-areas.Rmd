@@ -11,9 +11,11 @@ tags: []
 knitr::opts_chunk$set(echo = TRUE, collapse = TRUE)
 ```
 
-Earlier this year I wanted to learn more about the population growth rates of cities in the United States. I had read that cities were burgeoning again after a period of stagnation in the early- and mid-2000s, and I had seen evidence in the form of gentrifying neighborhoods in Philadelphia and scores of cranes towering over Washington. But what I found was mostly limited to tables and charts like [this one](https://www.census.gov/content/dam/Census/library/visualizations/2017/comm/cb17-81-grahic-citypopestimate.pdf) which simply present rankings over fixed time periods. (I've never even heard of those places.) Unsatisfied, I went to Census.gov to explore the data myself. This necessitated a non-trivial amount of data munging---maybe the reason for my unfruitful search---so I've decided to share my process below. The end result is [this nice visualization](https://www.dropbox.com/s/zw7fmq20bf38l3p/CityGrowthByRegion_largeSmooth2.pdf?raw=1) which I hope to make interactive later. You can download my vanilla R code [here]().
+Earlier this year I wanted to learn more about the population growth rates of cities in the United States. I had read that cities were burgeoning again after a period of stagnation in the early- and mid-2000s, and I had seen evidence in the form of gentrifying neighborhoods in Philadelphia and scores of construction cranes skirting Washington. But what I found was mostly limited to tables and charts like [this one](https://www.census.gov/content/dam/Census/library/visualizations/2017/comm/cb17-81-grahic-citypopestimate.pdf) which simply present rankings over fixed time periods. (And I've never even heard of those places.) Unsatisfied, I went to Census.gov to explore the data myself. This necessitated a non-trivial amount of data munging---maybe the reason for my unfruitful search---so I've decided to share my process below. The end result is [this nice visualization](https://www.dropbox.com/s/zw7fmq20bf38l3p/CityGrowthByRegion_largeSmooth2.pdf?raw=1) which I hope to make interactive later.
 
 The unit of analysis is a Metropolitan Statistical Area (MSA), which comprises an urban center together with a set of outlying counties with close economic ties; there are roughly 380 of them. The Census publishes _intercensal_ population estimates on an annual basis, with necessary revisions back to the most recent census year. MSA-level estimates are only available since 2010, so to extend the data to previous years one needs to aggregate county-level estimates. The data can be retrieved via calls to an API.^[See [here](https://www.census.gov/content/dam/Census/data/developers/api-user-guide/api-guide.pdf) for the API documentation. The data may also be downloaded from [Metropolitan and Micropolitan Statistical Area Datasets](https://www.census.gov/data/datasets/2016/demo/popest/total-metro-and-micro-statistical-areas.html) and [County Intercensal Datasets](https://www.census.gov/data/datasets/time-series/demo/popest/intercensal-2000-2010-counties.html).]
+
+The following code is available as a plain R script [here](https://www.dropbox.com/s/slvg4nno6hwidtk/_Census-msa-growth.R?raw=1).
 
 ```{r, message=FALSE}
 library(httr)
@@ -32,12 +34,12 @@ msa10.16 =
                  '&for=metropolitan+statistical+area/micropolitan+statistical+area:*')
   ) %>%
   content() %>%
-  map(., setNames, unlist(.[[1]])) %>%
-  keep(., function(x) grepl('Metro Area', x$GEONAME)) %>%
-  keep(., function(x) grepl('estimate$', x$DATE_DESC)) %>%
+  map(setNames, unlist(.[[1]])) %>%
+  keep(function(x) grepl('Metro Area', x$GEONAME)) %>%
+  keep(function(x) grepl('estimate$', x$DATE_DESC)) %>%
   rbindlist() %>%
-  setnames(., 'metropolitan statistical area/micropolitan statistical area', 'MSA') %>%
-  setnames(., 'GEONAME', 'MSA_NAME')
+  setnames('metropolitan statistical area/micropolitan statistical area', 'MSA') %>%
+  setnames('GEONAME', 'MSA_NAME')
 
 msa10.16[, `:=`(
   DATE = NULL,
@@ -55,9 +57,8 @@ county00.09 =
                  '&for=county:*')
   ) %>%
   content() %>%
-  map(., setNames, unlist(.[[1]])) %>%
-  `[`(-1) %>%
-  keep(., function(x) grepl('estimate$', x$DATE_DESC)) %>%
+  map(setNames, unlist(.[[1]])) %>%
+  keep(function(x) grepl('estimate$', x$DATE_DESC)) %>%
   rbindlist()
 
 county00.09[, `:=`(
@@ -87,7 +88,7 @@ parse_delin_file = function(url) {
     dplyr::select(-c(2,3,4,7)) %>%
     dplyr::filter(grepl('\\d{5}', V1)) %>%
     setDT() %>%
-    setnames(., c('MSA','state','county','Name'))
+    setnames(c('MSA','state','county','Name'))
   
   da[, names(da):= lapply(.SD, function(z) {z[grepl('^ *$',z)] = NA; z}), .SDcols=names(da)]
   da[, Name:= stringr::str_trim(Name, 'right')]
@@ -164,7 +165,7 @@ msa03.16 = msa03.16[msa03.16[, .I[.N==14], by='MSA']$V1]
 Patching these two series together results in several sharp discontinuities in 2009-2010 (maybe due to some MSAs being redefined after the 2010 Census). As we're ultimately interest in growth rates as opposed to levels, these discontinuities can be "corrected" by adjusting the population estimates. A reasonable adjustment is to assume the growth rate from 2009-2010 to be the average of growth rates from 2008-2009 and 2010-2011. If $X_i$ is the population in year $i$ and $g_{i,j} = X_j / X_i - 1$ the population growth rate from year $i$ to year $j$, define the adjusted estimates
 $$
 \tilde{X}_i = X_{2009} (1 + g_{2010, i}) \sqrt{(1 + g_{2008, 2009})(1 + g_{2010, 2011})} \\[1.2em]
-= X_i \frac{X_{2009}}{X_{2010}} \sqrt{\frac{X_{2009}}{X_{2008}} \cdot \frac{X_{2011}}{X_{2010}}}.
+= X_i \frac{X_{2009}}{X_{2010}} \sqrt{\frac{X_{2009}}{X_{2008}} \cdot \frac{X_{2011}}{X_{2010}}}
 $$
 for $i \geq 2010$ and $\tilde{X}_i = X_i$ for $i < 2010$. Doing it this way essentially joins the segments $X_{2003:2009}$ and $X_{2010:2016}$ while preserving growth rates within each. But bear in mind that some MSA definitions may not be consistent over the entire sample period.
 
@@ -224,23 +225,21 @@ Finally, our plot will be more visually appealing with smooth curves that pass t
 $$
 popidx_j - 100 = \text{poly}(year_j - 2003, 5) \; \boldsymbol{\beta}_j + \boldsymbol{\varepsilon}_j
 $$
-for each MSA $j$ and computing fitted values at sufficiently high resolution. I chose $k = 5$ as the polynomial degree because it produces a good visual result without overfitting the sample points. (Note that I exclude New Orleans, LA due to a large population shock (-25%) in the aftermath of Hurricane Katrina in 2005. A piecewise smooth might be more appropriate for this exceptional case.)
+for each MSA $j$ and computing fitted values at sufficiently high resolution. I chose $k = 5$ as the polynomial degree because it produces a good visual result without overfitting or underfitting the sample points. (Note that I exclude New Orleans, LA due to a large population shock (-25%) in the aftermath of Hurricane Katrina in 2005. A piecewise smooth might be more appropriate for this exceptional case.)
 
 ```{r}
 xgrid = seq(2003, 2016, .1)
 
 polyfit = plotData[MSA.short!='New Orleans, LA', .(
-  YEAR=xgrid,
-  POP_Idx=predict(
+  YEAR = xgrid,
+  POP_Idx = predict(
     lm(I(POP_Idx - 100) ~ 0 + poly(YEAR - 2003, 5, raw=TRUE)),
     newdata=data.frame(YEAR=xgrid)) + 100
   ),
   by=.(Region, MSA.short, line_color)]
 
-# Merge label
 plotData = plotData[, .(YEAR=as.double(YEAR), MSA.short, label)][
   polyfit, on=.(YEAR, MSA.short)]
-
 ```
 
 Now we're ready to plot the data! We can assign a `ggplot` object to a variable for each Census region and pass these objects to `gridExtra::grid.arrange` to organize into a 2-by-2 panel. (Perhaps this could just as well be accomplished with `ggplot2::facet_wrap`.) Note that the use of the `direction` argument in `ggrepel::geom_text_repel` currently requires the development version of the package, which can be installed from GitHub.
@@ -292,6 +291,6 @@ $$
 $$
 ] (It's doubtful that Pittsburgh, PA will see its population nosedive to zero in five years.)
 
-**Addendum.** The _Wall Street Journal_ produced a similar [graphic](https://www.dropbox.com/s/7quwm2zzh56j272/NA-CO335A_SIOUX_16U_20170315160308.jpg?raw=1) for an excellent [article](https://www.wsj.com/articles/as-many-midwest-cities-slump-sioux-falls-soars-1489743009) about Sioux Falls, SD earlier this year. (I like my version better :3) Oddly enough, I wasn't able to locate any MSA population data from the Bureau of Economic Analysis, which is listed as the data source.
+**Addendum.** The _Wall Street Journal_ produced a similar [graphic](https://www.dropbox.com/s/7quwm2zzh56j272/NA-CO335A_SIOUX_16U_20170315160308.jpg?raw=1) for an excellent [article](https://www.wsj.com/articles/as-many-midwest-cities-slump-sioux-falls-soars-1489743009) about Sioux Falls, SD earlier this year. (I like my version better :3) Oddly, I wasn't able to locate any MSA population data from the Bureau of Economic Analysis, which is listed as the data source. I did, however, find BEA data on [GDP by MSA](https://www.bea.gov/newsreleases/regional/gdp_metro/gdp_metro_newsrelease.htm) which looks interesting.
 
 
