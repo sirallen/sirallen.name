@@ -240,7 +240,24 @@ grid.arrange(
 <p>(You can right-click and “open in new tab” to magnify the image.)</p>
 <p>It’s nice to be able to see the full population trajectories—for example, we can see that Boston experienced negative growth in the years following 2003 but reversed course to become the Northeast’s fastest-growing metropolitan area over the past decade. One of the immediate takeaways, however, is that the most impressive growth is concentrated in the South and the West, led by the likes of Austin, Raleigh, and Las Vegas. (I’m reminded of this <a href="https://www.washingtonpost.com/realestate/fast-growing-technology-sector-is-fueling-a-housing-boom-in-cities-across-america/2017/01/26/5c72c276-a5d8-11e6-8042-f4d111c862d1_story.html">article</a>.)</p>
 <p>Finally, a note of caution regarding interpretation. The choice of 2003 as the base year is arbitrary, so take the ordering of the labels with a grain of salt. Moreover, today’s fastest-growing MSAs are not necessarily those highest on the y-scale, but rather those with the largest slopes at <span class="math inline">\(x = 2016\)</span> (roughly). There are mild distortions in these slopes due to <a href="https://en.wikipedia.org/wiki/Runge%27s_phenomenon">Runge’s phenomenon</a>, and it would be ill-advised to try to extrapolate more than a year or two into the future.<a href="#fn4" class="footnoteRef" id="fnref4"><sup>4</sup></a> (It’s doubtful that Pittsburgh, PA will see its population nosedive to zero in five years.)</p>
-<p><strong>Addendum.</strong> The <em>Wall Street Journal</em> produced a similar <a href="https://www.dropbox.com/s/7quwm2zzh56j272/NA-CO335A_SIOUX_16U_20170315160308.jpg?raw=1">graphic</a> for an excellent <a href="https://www.wsj.com/articles/as-many-midwest-cities-slump-sioux-falls-soars-1489743009">article</a> about Sioux Falls, SD earlier this year. (I like my version better :3) Oddly, I wasn’t able to locate any MSA population data from the Bureau of Economic Analysis, which is listed as the data source. I did, however, find BEA data on <a href="https://www.bea.gov/newsreleases/regional/gdp_metro/gdp_metro_newsrelease.htm">GDP by MSA</a> which looks interesting.</p>
+<div id="addenda" class="section level1">
+<h1>Addenda</h1>
+<ol style="list-style-type: decimal">
+<li><p>The <em>Wall Street Journal</em> produced a similar <a href="https://www.dropbox.com/s/7quwm2zzh56j272/NA-CO335A_SIOUX_16U_20170315160308.jpg?raw=1">graphic</a> for an excellent <a href="https://www.wsj.com/articles/as-many-midwest-cities-slump-sioux-falls-soars-1489743009">article</a> about Sioux Falls, SD earlier this year. Oddly, I wasn’t able to locate any MSA population data from the Bureau of Economic Analysis, which is listed as the data source. I did, however, find BEA data on <a href="https://www.bea.gov/newsreleases/regional/gdp_metro/gdp_metro_newsrelease.htm">GDP by MSA</a> which looks interesting.</p></li>
+<li><p>For kicks, here’s a joyplot of growth densities by year, for all MSAs with observations over the entire sample period (which includes all but about 40 of them). Tails are truncated by the <code>rel_min_height</code> argument. It actually looks like median growth has slowed somewhat, contrary to my initial belief.</p></li>
+</ol>
+<pre class="r"><code>library(ggridges)
+
+msa03.16[, .(YEAR=YEAR[-1], g=100*diff(log(POP_Idx))), by=&#39;MSA&#39;] %&gt;%
+  ggplot(aes(x = g, y = factor(YEAR, levels=2016:2004))) +
+  geom_density_ridges(rel_min_height=.01, fill=&#39;royalblue&#39;, alpha=.5) +
+  scale_x_continuous(limits=c(-3 ,6)) +
+  labs(x=&#39;YoY population growth (%)&#39;, y=&#39;&#39;) +
+  theme_bw() +
+  theme(panel.border=element_rect(color=NA))
+## Picking joint bandwidth of 0.246</code></pre>
+<p><img src="/blog/2017-09-29-population-growth-trajectories-of-u-s-metropolitan-areas_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+</div>
 <div class="footnotes">
 <hr />
 <ol>
@@ -248,7 +265,7 @@ grid.arrange(
 <li id="fn2"><p>Micropolitan and metropolitan statistical areas are collectively called <em>core-based statistical areas</em> (CBSAs).<a href="#fnref2">↩</a></p></li>
 <li id="fn3"><p>Fortunately, the files seem to share a common format so it shouldn’t be too difficult to prepend earlier data.<a href="#fnref3">↩</a></p></li>
 <li id="fn4"><p>Maybe the smoothing step could be improved by running a penalized regression with penalty proportional to the deviation in slopes, i.e., something along the lines of <span class="math display">\[
-\min_\beta \left\{ (y - X\beta)^\intercal (y - X\beta) + \gamma ||(X \beta)&#39;(2015) - (1 + g_{2015, 2016})|| \right\}
+\min_\beta \left\{ (y - X\beta)^\intercal (y - X\beta) + \gamma ||(X \beta)&#39;(2016) - (1 + g_{2015, 2016})|| \right\}
 \]</span><a href="#fnref4">↩</a></p></li>
 </ol>
 </div>
