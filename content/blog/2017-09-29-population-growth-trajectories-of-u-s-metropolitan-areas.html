@@ -73,18 +73,18 @@ head(county00.09, 20)</code></pre>
 msa_delin = setNames(lapply(delin_files, parse_delin_file), 2003:2009)
 
 print(msa_delin$`2009`)
-##         MSA Div state county
-##    1: 10180  NA    NA     NA
-##    2: 10180  NA    48    059
-##    3: 10180  NA    48    253
-##    4: 10180  NA    48    441
-##    5: 10380  NA    NA     NA
-##   ---                       
-## 1568: 49700  NA    NA     NA
-## 1569: 49700  NA    06    101
-## 1570: 49700  NA    06    115
-## 1571: 49740  NA    NA     NA
-## 1572: 49740  NA    04    027
+##         MSA state county                            MSA_NAME
+##    1: 10180    NA     NA                         Abilene, TX
+##    2: 10180    48    059                         Abilene, TX
+##    3: 10180    48    253                         Abilene, TX
+##    4: 10180    48    441                         Abilene, TX
+##    5: 10380    NA     NA Aguadilla-Isabela-San Sebastián, PR
+##   ---                                                       
+## 1568: 49700    NA     NA                       Yuba City, CA
+## 1569: 49700    06    101                       Yuba City, CA
+## 1570: 49700    06    115                       Yuba City, CA
+## 1571: 49740    NA     NA                            Yuma, AZ
+## 1572: 49740    04    027                            Yuma, AZ
 ##                                                                    Name
 ##    1:                         Abilene, TX Metropolitan Statistical Area
 ##    2:                                               Callahan County, TX
@@ -96,20 +96,9 @@ print(msa_delin$`2009`)
 ## 1569:                                                 Sutter County, CA
 ## 1570:                                                   Yuba County, CA
 ## 1571:                            Yuma, AZ Metropolitan Statistical Area
-## 1572:                                                   Yuma County, AZ
-##                                  MSA_NAME
-##    1:                         Abilene, TX
-##    2:                         Abilene, TX
-##    3:                         Abilene, TX
-##    4:                         Abilene, TX
-##    5: Aguadilla-Isabela-San Sebastián, PR
-##   ---                                    
-## 1568:                       Yuba City, CA
-## 1569:                       Yuba City, CA
-## 1570:                       Yuba City, CA
-## 1571:                            Yuma, AZ
-## 1572:                            Yuma, AZ</code></pre>
-<p>The next step is to merge each delineation file with the county population estimates for the corresponding year. This can be done with the Map function. Then we can simply sum the population estimates by year/MSA and bind the 2003-2009 and 2010-2016 data together:</p>
+## 1572:                                                   Yuma County, AZ</code></pre>
+<p>The next step is to merge each delineation file with the county population estimates for the corresponding year, using the state and county FIPS codes. This can be done with the Map function. Then we can simply sum the population estimates by year/MSA and bind the 2003-2009 and 2010-2016 data sets together.</p>
+<p>Note: Some of the 5-digit MSA codes do not comport across (or even within) data sets, even though their labels suggest that they represent the same MSA. For each of these cases, I recode the MSA to match the most recent version.</p>
 <pre class="r"><code>msa03.09 = Map(function(delin, year) delin[county00.09[YEAR==year],
                                            on=.(state, county), nomatch=0],
                msa_delin, as.list(2003:2009))
@@ -126,23 +115,53 @@ msa03.16 = rbindlist(
   fill=TRUE
 )
 
+# Steubenville-Weirton, OH-WV --&gt; Weirton-Steubenville, WV-OH
+msa03.16[MSA==44600, MSA:= 48260]
+# Vero Beach, FL --&gt; Sebastian-Vero Beach, FL
+msa03.16[MSA==46940, MSA:= 42680]
+# Santa Barbara-Santa Maria-Goleta, CA --&gt; Santa Maria-Santa Barbara, CA
+msa03.16[MSA==42060, MSA:= 42200]
+# Los Angeles-Long Beach-Santa Ana, CA --&gt; Los Angeles-Long Beach-Anaheim, CA
+msa03.16[MSA==31100, MSA:= 31080]
+# Lafayette, IN --&gt; Lafayette-West Lafayette, IN
+msa03.16[MSA==29140, MSA:= 29200]
+# Honolulu, HI --&gt; Urban Honolulu, HI
+msa03.16[MSA==26180, MSA:= 46520]
+# Bloomington-Normal, IL --&gt; Bloomington, IL
+msa03.16[MSA==14060, MSA:= 14010]
+# Sarasota-Bradenton-Venice, FL --&gt; North Port-Sarasota-Bradenton, FL
+msa03.16[MSA==42260, MSA:= 35840]
+# Bradenton-Sarasota-Venice, FL --&gt; North Port-Sarasota-Bradenton, FL
+msa03.16[MSA==14600, MSA:= 35840]
+# Fort Walton Beach-Crestview-Destin, FL --&gt; Crestview-Fort Walton Beach-Destin, FL
+msa03.16[MSA==23020, MSA:= 18880]
+
 setkey(msa03.16, MSA, YEAR)
 
-msa03.16[, MSA_NAME:= zoo::na.locf(MSA_NAME, fromLast=TRUE), by=&#39;MSA&#39;]</code></pre>
+msa03.16[, MSA_NAME:= zoo::na.locf(MSA_NAME, fromLast=TRUE), by=&#39;MSA&#39;]
+
+# Restrict to MSAs with data over entire sample period (2003 - 2016)
+msa03.16 = msa03.16[msa03.16[, .I[.N==14], by=&#39;MSA&#39;]$V1]</code></pre>
 <p>Patching these two series together results in several sharp discontinuities in 2009-2010 (maybe due to some MSAs being redefined after the 2010 Census). As we’re ultimately interest in growth rates as opposed to levels, these discontinuities can be “corrected” by adjusting the population estimates. A reasonable adjustment is to assume the growth rate from 2009-2010 to be the average of growth rates from 2008-2009 and 2010-2011. If <span class="math inline">\(X_i\)</span> is the population in year <span class="math inline">\(i\)</span> and <span class="math inline">\(g_{i,j} = X_j / X_i - 1\)</span> the population growth rate from year <span class="math inline">\(i\)</span> to year <span class="math inline">\(j\)</span>, define the adjusted estimates <span class="math display">\[
 \tilde{X}_i = X_{2009} (1 + g_{2010, i}) \sqrt{(1 + g_{2008, 2009})(1 + g_{2010, 2011})} \\[1.2em]
 = X_i \frac{X_{2009}}{X_{2010}} \sqrt{\frac{X_{2009}}{X_{2008}} \cdot \frac{X_{2011}}{X_{2010}}}.
 \]</span> for <span class="math inline">\(i \geq 2010\)</span> and <span class="math inline">\(\tilde{X}_i = X_i\)</span> for <span class="math inline">\(i &lt; 2010\)</span>. Doing it this way essentially joins the segments <span class="math inline">\(X_{2003:2009}\)</span> and <span class="math inline">\(X_{2010:2016}\)</span> while preserving growth rates within each. But bear in mind that some MSA definitions may not be consistent over the entire sample period.</p>
-<p>Instead of calculating growth rates directly, let’s construct a population index, or <em>trajectory</em>, with base year 2003, <span class="math inline">\(\hat{X}_i = 100 \times \tilde{X}_i / X_{2003}\)</span>. Plotting the trajectories will give a nice visual representation while permitting approximate comparisons of growth for different MSAs, or for the same MSA at different points in time. Let’s also compute the average trajectory of all MSAs in our sample to provide a baseline comparison. (Note that summing <code>POP</code> by year gives us a population-weighted average, as opposed to equal-weighted.)</p>
-<pre class="r"><code># Restrict to MSAs with data over entire sample period (2003 - 2016)
-msa03.16 = msa03.16[msa03.16[, .I[.N == 2016 - 2003 + 1], by=&#39;MSA&#39;]$V1]
-
-msa03.16[, POP_Adj:= ifelse(YEAR &lt; 2010, POP,
+<p>Sanity check that it works:</p>
+<pre class="r"><code>msa03.16[, POP_Adj:= ifelse(YEAR &lt; 2010, POP,
   POP/POP[YEAR==2010] * POP[YEAR==2009] * 
     sqrt(POP[YEAR==2009]/POP[YEAR==2008] * POP[YEAR==2011]/POP[YEAR==2010])),
-  by=&#39;MSA&#39;][
-    # Calculate population index (=100 in base year 2003)
-    , POP_Idx:= 100 * POP_Adj / POP_Adj[1], by=&#39;MSA&#39;]
+  by=&#39;MSA&#39;]
+
+with(msa03.16[MSA==18880], {
+  matplot(YEAR, cbind(POP, POP_Adj), type=&#39;l&#39;,
+          ylab=&#39;Population&#39;, main=MSA_NAME[1])
+  legend(&#39;topleft&#39;, c(&#39;POP&#39;, &#39;POP_Adj&#39;), lty=1:2, col=c(&#39;black&#39;,&#39;red&#39;),
+         inset=.01)
+})</code></pre>
+<p><img src="/blog/2017-09-29-population-growth-trajectories-of-u-s-metropolitan-areas_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<p>Instead of calculating growth rates directly, let’s construct a population index, or <em>trajectory</em>, with base year 2003, <span class="math inline">\(\hat{X}_i = 100 \times \tilde{X}_i / X_{2003}\)</span>. Plotting the trajectories will give a nice visual representation while permitting approximate comparisons of growth for different MSAs, or for the same MSA at different points in time. Let’s also compute the average trajectory of all MSAs in our sample to provide a baseline comparison. (Note that summing <code>POP</code> by year gives us a population-weighted average, as opposed to equal-weighted.)</p>
+<pre class="r"><code># Calculate population index (=100 in base year 2003)
+msa03.16[, POP_Idx:= 100 * POP_Adj / POP_Adj[1], by=&#39;MSA&#39;]
 
 msa.Avg =
   msa03.16[, .(MSA_NAME=&#39;MSA.Average&#39;, MSA.short=&#39;MSA.Average&#39;, POP_Adj=sum(POP_Adj)),
@@ -172,7 +191,7 @@ plotData[MSA_NAME!=&#39;MSA.Average&#39;, sizeRank_region:= frank(-POP_Adj), by=
 plotData[MSA_NAME!=&#39;MSA.Average&#39;, sizeRank_label:= paste0(&#39; (&#39;, sizeRank_region, &#39;,&#39;, sizeRank, &#39;)&#39;)]
 plotData[, label:= ifelse(MSA_NAME==&#39;MSA.Average&#39;, MSA_NAME, paste0(MSA.short, sizeRank_label))]</code></pre>
 <p>Finally, our plot will be more visually appealing with smooth curves that pass through a common point <span class="math inline">\((2003, 100)\)</span>. This can be achieved by fitting a polynomial regression (sans intercept) <span class="math display">\[
-popidx_j - 100 = \text{poly}(year_j - 2003, 5) \; \boldsymbol{\beta}_j
+popidx_j - 100 = \text{poly}(year_j - 2003, 5) \; \boldsymbol{\beta}_j + \boldsymbol{\varepsilon}_j
 \]</span> for each MSA <span class="math inline">\(j\)</span> and computing fitted values at sufficiently high resolution. I chose <span class="math inline">\(k = 5\)</span> as the polynomial degree because it produces a good visual result without overfitting the sample points. (Note that I exclude New Orleans, LA due to a large population shock (-25%) in the aftermath of Hurricane Katrina in 2005. A piecewise smooth might be more appropriate for this exceptional case.)</p>
 <pre class="r"><code>xgrid = seq(2003, 2016, .1)
 
@@ -222,7 +241,7 @@ grid.arrange(
   ),
   p.Northeast, p.Midwest, p.South, p.West, ncol=2
 )</code></pre>
-<p><img src="/blog/2017-09-29-population-growth-trajectories-of-u-s-metropolitan-areas_files/figure-html/unnamed-chunk-10-1.png" width="1152" /></p>
+<p><img src="/blog/2017-09-29-population-growth-trajectories-of-u-s-metropolitan-areas_files/figure-html/unnamed-chunk-11-1.png" width="1152" /></p>
 <p>(You can right-click and “open in new tab” to magnify the image.)</p>
 <p>It’s nice to be able to see the full population trajectories—for example, we can see that Boston experienced negative growth in the years following 2003 but reversed course to become the Northeast’s fastest-growing metropolitan area over the past decade. One of the immediate takeaways, however, is that the most impressive growth is concentrated in the South and the West, led by the likes of Austin, Raleigh, and Las Vegas. (I’m reminded of this <a href="https://www.washingtonpost.com/realestate/fast-growing-technology-sector-is-fueling-a-housing-boom-in-cities-across-america/2017/01/26/5c72c276-a5d8-11e6-8042-f4d111c862d1_story.html">article</a>.)</p>
 <p>Finally, a note of caution regarding interpretation. The choice of 2003 as the base year is arbitrary, so take the ordering of the labels with a grain of salt. Moreover, today’s fastest-growing MSAs are not necessarily those highest on the y-scale, but rather those with the largest slopes at <span class="math inline">\(x = 2016\)</span> (roughly). There are mild distortions in these slopes due to <a href="https://en.wikipedia.org/wiki/Runge%27s_phenomenon">Runge’s phenomenon</a>, and it would be ill-advised to try to extrapolate more than a year or two into the future.<a href="#fn4" class="footnoteRef" id="fnref4"><sup>4</sup></a> (It’s doubtful that Pittsburgh, PA will see its population nosedive to zero in five years.)</p>

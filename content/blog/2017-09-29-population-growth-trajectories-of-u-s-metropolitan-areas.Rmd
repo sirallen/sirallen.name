@@ -88,10 +88,10 @@ parse_delin_file = function(url) {
     read.fwf(
       url(url), skip=11, widths=c(5,3,5,3,2,3,3,80), stringsAsFactors=FALSE
     ) %>%
-    dplyr::select(-c(2,4,7)) %>%
+    dplyr::select(-c(2,3,4,7)) %>%
     dplyr::filter(grepl('\\d{5}', V1)) %>%
     setDT() %>%
-    setnames(., c('MSA','Div','state','county','Name'))
+    setnames(., c('MSA','state','county','Name'))
   
   da[, names(da):= lapply(.SD, function(z) {z[grepl('^ *$',z)] = NA; z}), .SDcols=names(da)]
   da[, Name:= stringr::str_trim(Name, 'right')]
@@ -99,6 +99,8 @@ parse_delin_file = function(url) {
        zoo::na.locf(
          stringr::str_extract(
            Name, '.*(?= Metropolitan Statistical Area)'))]
+  da[, MSA:= as.integer(MSA)]
+  setcolorder(da, c(1:3, 5, 4))
   
   da
 }
@@ -114,7 +116,9 @@ msa_delin = setNames(lapply(delin_files, parse_delin_file), 2003:2009)
 print(msa_delin$`2009`)
 ```
 
-The next step is to merge each delineation file with the county population estimates for the corresponding year. This can be done with the Map function. Then we can simply sum the population estimates by year/MSA and bind the 2003-2009 and 2010-2016 data together:
+The next step is to merge each delineation file with the county population estimates for the corresponding year, using the state and county FIPS codes. This can be done with the Map function. Then we can simply sum the population estimates by year/MSA and bind the 2003-2009 and 2010-2016 data sets together.
+
+Note: Some of the 5-digit MSA codes do not comport across (or even within) data sets, even though their labels suggest that they represent the same MSA. For each of these cases, I recode the MSA to match the most recent version.
 ```{r}
 msa03.09 = Map(function(delin, year) delin[county00.09[YEAR==year],
                                            on=.(state, county), nomatch=0],
@@ -132,10 +136,35 @@ msa03.16 = rbindlist(
   fill=TRUE
 )
 
+# Steubenville-Weirton, OH-WV --> Weirton-Steubenville, WV-OH
+msa03.16[MSA==44600, MSA:= 48260]
+# Vero Beach, FL --> Sebastian-Vero Beach, FL
+msa03.16[MSA==46940, MSA:= 42680]
+# Santa Barbara-Santa Maria-Goleta, CA --> Santa Maria-Santa Barbara, CA
+msa03.16[MSA==42060, MSA:= 42200]
+# Los Angeles-Long Beach-Santa Ana, CA --> Los Angeles-Long Beach-Anaheim, CA
+msa03.16[MSA==31100, MSA:= 31080]
+# Lafayette, IN --> Lafayette-West Lafayette, IN
+msa03.16[MSA==29140, MSA:= 29200]
+# Honolulu, HI --> Urban Honolulu, HI
+msa03.16[MSA==26180, MSA:= 46520]
+# Bloomington-Normal, IL --> Bloomington, IL
+msa03.16[MSA==14060, MSA:= 14010]
+# Sarasota-Bradenton-Venice, FL --> North Port-Sarasota-Bradenton, FL
+msa03.16[MSA==42260, MSA:= 35840]
+# Bradenton-Sarasota-Venice, FL --> North Port-Sarasota-Bradenton, FL
+msa03.16[MSA==14600, MSA:= 35840]
+# Fort Walton Beach-Crestview-Destin, FL --> Crestview-Fort Walton Beach-Destin, FL
+msa03.16[MSA==23020, MSA:= 18880]
+
 setkey(msa03.16, MSA, YEAR)
 
 msa03.16[, MSA_NAME:= zoo::na.locf(MSA_NAME, fromLast=TRUE), by='MSA']
+
+# Restrict to MSAs with data over entire sample period (2003 - 2016)
+msa03.16 = msa03.16[msa03.16[, .I[.N==14], by='MSA']$V1]
 ```
+
 Patching these two series together results in several sharp discontinuities in 2009-2010 (maybe due to some MSAs being redefined after the 2010 Census). As we're ultimately interest in growth rates as opposed to levels, these discontinuities can be "corrected" by adjusting the population estimates. A reasonable adjustment is to assume the growth rate from 2009-2010 to be the average of growth rates from 2008-2009 and 2010-2011. If $X_i$ is the population in year $i$ and $g_{i,j} = X_j / X_i - 1$ the population growth rate from year $i$ to year $j$, define the adjusted estimates
 $$
 \tilde{X}_i = X_{2009} (1 + g_{2010, i}) \sqrt{(1 + g_{2008, 2009})(1 + g_{2010, 2011})} \\[1.2em]
@@ -143,17 +172,25 @@ $$
 $$
 for $i \geq 2010$ and $\tilde{X}_i = X_i$ for $i < 2010$. Doing it this way essentially joins the segments $X_{2003:2009}$ and $X_{2010:2016}$ while preserving growth rates within each. But bear in mind that some MSA definitions may not be consistent over the entire sample period.
 
-Instead of calculating growth rates directly, let's construct a population index, or _trajectory_, with base year 2003, $\hat{X}_i = 100 \times \tilde{X}_i / X_{2003}$. Plotting the trajectories will give a nice visual representation while permitting approximate comparisons of growth for different MSAs, or for the same MSA at different points in time. Let's also compute the average trajectory of all MSAs in our sample to provide a baseline comparison. (Note that summing `POP` by year gives us a population-weighted average, as opposed to equal-weighted.)
+Sanity check that it works:
 ```{r}
-# Restrict to MSAs with data over entire sample period (2003 - 2016)
-msa03.16 = msa03.16[msa03.16[, .I[.N == 2016 - 2003 + 1], by='MSA']$V1]
-
 msa03.16[, POP_Adj:= ifelse(YEAR < 2010, POP,
   POP/POP[YEAR==2010] * POP[YEAR==2009] * 
     sqrt(POP[YEAR==2009]/POP[YEAR==2008] * POP[YEAR==2011]/POP[YEAR==2010])),
-  by='MSA'][
-    # Calculate population index (=100 in base year 2003)
-    , POP_Idx:= 100 * POP_Adj / POP_Adj[1], by='MSA']
+  by='MSA']
+
+with(msa03.16[MSA==18880], {
+  matplot(YEAR, cbind(POP, POP_Adj), type='l',
+          ylab='Population', main=MSA_NAME[1])
+  legend('topleft', c('POP', 'POP_Adj'), lty=1:2, col=c('black','red'),
+         inset=.01)
+})
+```
+
+Instead of calculating growth rates directly, let's construct a population index, or _trajectory_, with base year 2003, $\hat{X}_i = 100 \times \tilde{X}_i / X_{2003}$. Plotting the trajectories will give a nice visual representation while permitting approximate comparisons of growth for different MSAs, or for the same MSA at different points in time. Let's also compute the average trajectory of all MSAs in our sample to provide a baseline comparison. (Note that summing `POP` by year gives us a population-weighted average, as opposed to equal-weighted.)
+```{r}
+# Calculate population index (=100 in base year 2003)
+msa03.16[, POP_Idx:= 100 * POP_Adj / POP_Adj[1], by='MSA']
 
 msa.Avg =
   msa03.16[, .(MSA_NAME='MSA.Average', MSA.short='MSA.Average', POP_Adj=sum(POP_Adj)),
@@ -189,7 +226,7 @@ plotData[, label:= ifelse(MSA_NAME=='MSA.Average', MSA_NAME, paste0(MSA.short, s
 
 Finally, our plot will be more visually appealing with smooth curves that pass through a common point $(2003, 100)$. This can be achieved by fitting a polynomial regression (sans intercept)
 $$
-popidx_j - 100 = \text{poly}(year_j - 2003, 5) \; \boldsymbol{\beta}_j
+popidx_j - 100 = \text{poly}(year_j - 2003, 5) \; \boldsymbol{\beta}_j + \boldsymbol{\varepsilon}_j
 $$
 for each MSA $j$ and computing fitted values at sufficiently high resolution. I chose $k = 5$ as the polynomial degree because it produces a good visual result without overfitting the sample points. (Note that I exclude New Orleans, LA due to a large population shock (-25%) in the aftermath of Hurricane Katrina in 2005. A piecewise smooth might be more appropriate for this exceptional case.)
 
