@@ -1,0 +1,240 @@
+---
+title: 'Data Viz: Population Growth Trajectories of U.S. Metropolitan Areas'
+author: Allen Sirolly
+date: '2017-09-29'
+slug: population-growth-trajectories-metropolitan-areas
+categories: []
+tags: []
+---
+
+
+
+<p>Earlier this year I wanted to learn more about the population growth rates of cities in the United States. I had read that cities were burgeoning again after a period of stagnation in the early- and mid-2000s, and I had seen evidence in the form of gentrifying neighborhoods in Philadelphia and scores of cranes towering over Washington. But what I found was mostly limited to tables and charts like <a href="https://www.census.gov/content/dam/Census/library/visualizations/2017/comm/cb17-81-grahic-citypopestimate.pdf">this one</a> which simply present rankings over fixed time periods. (I’ve never even heard of those places.) Unsatisfied, I went to Census.gov to explore the data myself. This necessitated a non-trivial amount of data munging—maybe the reason for my unfruitful search—so I’ve decided to share my process below. The end result is <a href="https://www.dropbox.com/s/zw7fmq20bf38l3p/CityGrowthByRegion_largeSmooth2.pdf?raw=1">this nice visualization</a> which I hope to make interactive later. You can download my vanilla R code <a href="">here</a>.</p>
+<p>The unit of analysis is a Metropolitan Statistical Area (MSA), which comprises an urban center together with a set of outlying counties with close economic ties; there are roughly 380 of them. The Census publishes <em>intercensal</em> population estimates on an annual basis, with necessary revisions back to the most recent census year. MSA-level estimates are only available since 2010, so to extend the data to previous years one needs to aggregate county-level estimates. The data can be retrieved via calls to an API.<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a></p>
+<pre class="r"><code>library(httr)
+library(purrr)
+library(data.table)
+library(ggplot2)
+library(ggrepel)
+library(grid)
+library(gridExtra)</code></pre>
+<pre class="r"><code>msa10.16 =
+  GET(
+    url = paste0(&#39;https://api.census.gov/data/2016/pep/population?&#39;,
+                 &#39;get=POP,DATE,DATE_DESC,GEONAME&#39;,
+                 &#39;&amp;for=metropolitan+statistical+area/micropolitan+statistical+area:*&#39;)
+  ) %&gt;%
+  content() %&gt;%
+  map(., setNames, unlist(.[[1]])) %&gt;%
+  keep(., function(x) grepl(&#39;Metro Area&#39;, x$GEONAME)) %&gt;%
+  keep(., function(x) grepl(&#39;estimate$&#39;, x$DATE_DESC)) %&gt;%
+  rbindlist() %&gt;%
+  setnames(., &#39;metropolitan statistical area/micropolitan statistical area&#39;, &#39;MSA&#39;) %&gt;%
+  setnames(., &#39;GEONAME&#39;, &#39;MSA_NAME&#39;)
+
+msa10.16[, `:=`(
+  DATE = NULL,
+  YEAR = stringr::str_extract(DATE_DESC, &#39;\\d{4}&#39;),
+  DATE_DESC = NULL,
+  MSA_NAME = gsub(&#39; Metro Area&#39;, &#39;&#39;, MSA_NAME))][
+    # convert columns char --&gt; int
+    , c(&#39;POP&#39;,&#39;YEAR&#39;,&#39;MSA&#39;):= lapply(.SD, as.integer),
+    .SDcols=c(&#39;POP&#39;,&#39;YEAR&#39;,&#39;MSA&#39;)]
+
+head(msa10.16, 20)
+
+county00.09 =
+  GET(
+    url = paste0(&#39;https://api.census.gov/data/2000/pep/int_population?&#39;,
+                 &#39;get=POP,DATE,DATE_DESC,GEONAME&#39;,
+                 &#39;&amp;for=county:*&#39;)
+  ) %&gt;%
+  content() %&gt;%
+  map(., setNames, unlist(.[[1]])) %&gt;%
+  `[`(-1) %&gt;%
+  keep(., function(x) grepl(&#39;estimate$&#39;, x$DATE_DESC)) %&gt;%
+  rbindlist()
+
+county00.09[, `:=`(
+  DATE = NULL,
+  YEAR = stringr::str_extract(DATE_DESC, &#39;\\d{4}&#39;),
+  DATE_DESC = NULL)][
+    # convert columns char --&gt; int
+    , c(&#39;POP&#39;,&#39;YEAR&#39;):= lapply(.SD, as.integer),
+    .SDcols=c(&#39;POP&#39;,&#39;YEAR&#39;)]
+
+head(county00.09, 20)</code></pre>
+<p>The correspondence between counties and MSAs prior to 2010 is established in a set of <a href="https://www.census.gov/geographies/reference-files/time-series/demo/metro-micro/historical-delineation-files.html">historical delineation files</a>. There is a delineation file for each year from 2003-2009 (updated in November or December) and at less frequent intervals before 2003. The implication is that MSA definitions can change over time, perhaps as urban centers see their spheres of influence expand or contract, or as micropolitan statistical areas grow large enough to merit classification as metropolitan areas.<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a></p>
+<p>These files aren’t in the API, so we’ll need to download and parse them separately. (This processing step is kind of tangential to the task at hand, so I’ve hidden the function <code>parse_delin_file</code> from view; it’s in the raw R file I linked to above.) Let’s start from 2003, which will yield us 14 years of population estimates. This should be enough to make a compelling graphic.<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a></p>
+<pre class="r"><code>delin_files = paste0(
+  &#39;https://www2.census.gov/programs-surveys/metro-micro/geographies/reference-files/&#39;,
+  2003:2009, &#39;/historical-delineation-files/&#39;, c(&#39;0312msa&#39;, rep(&#39;list4&#39;, 6)), &#39;.txt&#39;)
+
+msa_delin = setNames(lapply(delin_files, parse_delin_file), 2003:2009)
+
+print(msa_delin$`2009`)
+##         MSA Div state county
+##    1: 10180  NA    NA     NA
+##    2: 10180  NA    48    059
+##    3: 10180  NA    48    253
+##    4: 10180  NA    48    441
+##    5: 10380  NA    NA     NA
+##   ---                       
+## 1568: 49700  NA    NA     NA
+## 1569: 49700  NA    06    101
+## 1570: 49700  NA    06    115
+## 1571: 49740  NA    NA     NA
+## 1572: 49740  NA    04    027
+##                                                                    Name
+##    1:                         Abilene, TX Metropolitan Statistical Area
+##    2:                                               Callahan County, TX
+##    3:                                                  Jones County, TX
+##    4:                                                 Taylor County, TX
+##    5: Aguadilla-Isabela-San Sebastián, PR Metropolitan Statistical Area
+##   ---                                                                  
+## 1568:                       Yuba City, CA Metropolitan Statistical Area
+## 1569:                                                 Sutter County, CA
+## 1570:                                                   Yuba County, CA
+## 1571:                            Yuma, AZ Metropolitan Statistical Area
+## 1572:                                                   Yuma County, AZ
+##                                  MSA_NAME
+##    1:                         Abilene, TX
+##    2:                         Abilene, TX
+##    3:                         Abilene, TX
+##    4:                         Abilene, TX
+##    5: Aguadilla-Isabela-San Sebastián, PR
+##   ---                                    
+## 1568:                       Yuba City, CA
+## 1569:                       Yuba City, CA
+## 1570:                       Yuba City, CA
+## 1571:                            Yuma, AZ
+## 1572:                            Yuma, AZ</code></pre>
+<p>The next step is to merge each delineation file with the county population estimates for the corresponding year. This can be done with the Map function. Then we can simply sum the population estimates by year/MSA and bind the 2003-2009 and 2010-2016 data together:</p>
+<pre class="r"><code>msa03.09 = Map(function(delin, year) delin[county00.09[YEAR==year],
+                                           on=.(state, county), nomatch=0],
+               msa_delin, as.list(2003:2009))
+
+msa03.09 = lapply(msa03.09, function(d) d[, .(POP = sum(POP)), by=&#39;MSA&#39;])
+
+msa03.16 = rbindlist(
+  list(
+    rbindlist(
+      msa03.09, idcol=&#39;YEAR&#39;
+    )[, YEAR:= as.integer(YEAR)],
+    msa10.16
+  ),
+  fill=TRUE
+)
+
+setkey(msa03.16, MSA, YEAR)
+
+msa03.16[, MSA_NAME:= zoo::na.locf(MSA_NAME, fromLast=TRUE), by=&#39;MSA&#39;]</code></pre>
+<p>Patching these two series together results in several sharp discontinuities in 2009-2010 (maybe due to some MSAs being redefined after the 2010 Census). As we’re ultimately interest in growth rates as opposed to levels, these discontinuities can be “corrected” by adjusting the population estimates. A reasonable adjustment is to assume the growth rate from 2009-2010 to be the average of growth rates from 2008-2009 and 2010-2011. If <span class="math inline">\(X_i\)</span> is the population in year <span class="math inline">\(i\)</span> and <span class="math inline">\(g_{i,j} = X_j / X_i - 1\)</span> the population growth rate from year <span class="math inline">\(i\)</span> to year <span class="math inline">\(j\)</span>, define the adjusted estimates <span class="math display">\[
+\tilde{X}_i = X_{2009} (1 + g_{2010, i}) \sqrt{(1 + g_{2008, 2009})(1 + g_{2010, 2011})} \\[1.2em]
+= X_i \frac{X_{2009}}{X_{2010}} \sqrt{\frac{X_{2009}}{X_{2008}} \cdot \frac{X_{2011}}{X_{2010}}}.
+\]</span> for <span class="math inline">\(i \geq 2010\)</span> and <span class="math inline">\(\tilde{X}_i = X_i\)</span> for <span class="math inline">\(i &lt; 2010\)</span>. Doing it this way essentially joins the segments <span class="math inline">\(X_{2003:2009}\)</span> and <span class="math inline">\(X_{2010:2016}\)</span> while preserving growth rates within each. But bear in mind that some MSA definitions may not be consistent over the entire sample period.</p>
+<p>Instead of calculating growth rates directly, let’s construct a population index, or <em>trajectory</em>, with base year 2003, <span class="math inline">\(\hat{X}_i = 100 \times \tilde{X}_i / X_{2003}\)</span>. Plotting the trajectories will give a nice visual representation while permitting approximate comparisons of growth for different MSAs, or for the same MSA at different points in time. Let’s also compute the average trajectory of all MSAs in our sample to provide a baseline comparison. (Note that summing <code>POP</code> by year gives us a population-weighted average, as opposed to equal-weighted.)</p>
+<pre class="r"><code># Restrict to MSAs with data over entire sample period (2003 - 2016)
+msa03.16 = msa03.16[msa03.16[, .I[.N == 2016 - 2003 + 1], by=&#39;MSA&#39;]$V1]
+
+msa03.16[, POP_Adj:= ifelse(YEAR &lt; 2010, POP,
+  POP/POP[YEAR==2010] * POP[YEAR==2009] * 
+    sqrt(POP[YEAR==2009]/POP[YEAR==2008] * POP[YEAR==2011]/POP[YEAR==2010])),
+  by=&#39;MSA&#39;][
+    # Calculate population index (=100 in base year 2003)
+    , POP_Idx:= 100 * POP_Adj / POP_Adj[1], by=&#39;MSA&#39;]
+
+msa.Avg =
+  msa03.16[, .(MSA_NAME=&#39;MSA.Average&#39;, MSA.short=&#39;MSA.Average&#39;, POP_Adj=sum(POP_Adj)),
+           keyby=&#39;YEAR&#39;][
+             , POP_Idx:= 100 * POP_Adj / POP_Adj[1]]</code></pre>
+<p>The following code chunk shortens the names of MSAs (e.g., “New York-Newark-Jersey City, NY-NJ-PA” becomes “New York, NY”) and assigns them to one of the four major Census regions. We can then construct plot labels by appending an integer pair representing an MSA’s population rank within its region as well as overall.</p>
+<pre class="r"><code># Plot data - first restrict to &#39;large&#39; MSAs
+plotData = msa03.16[msa03.16[, .I[max(POP) &gt; 8e5], by=&#39;MSA&#39;]$V1]
+
+plotData = rbindlist(list(black=plotData, red=msa.Avg), fill=TRUE, idcol=&#39;line_color&#39;)
+
+# short names, regions
+plotData[, MSA.short:= gsub(&#39;([^-/]*).*(, [A-Z]{2}).*&#39;, &#39;\\1\\2&#39;, MSA_NAME)]
+plotData[grepl(&#39;(ME|NH|VT|MA|RI|CT|NY|PA|NJ)$&#39;, MSA.short), Region:= &#39;Northeast&#39;]
+plotData[grepl(&#39;(OH|IN|IA|MI|WI|MN|ND|SD|NE|KS|IL|MO)$&#39;, MSA.short), Region:= &#39;Midwest&#39;]
+plotData[grepl(&#39;(DE|MD|DC|VA|WV|NC|SC|GA|FL|KY|TN|AL|MS|AR|LA|OK|TX)$&#39;, MSA.short), Region:= &#39;South&#39;]
+plotData[grepl(&#39;(NM|AZ|CO|WY|MT|ID|UT|NV|WA|OR|CA|AK|HI)$&#39;, MSA.short), Region:= &#39;West&#39;]
+
+plotData[MSA.short==&#39;Urban Honolulu, HI&#39;, MSA.short:= &#39;Honolulu, HI&#39;]
+
+# Remove Puerto Rico
+plotData = plotData[!grepl(&#39;PR$&#39;, MSA.short)]
+
+# Population size ranks
+plotData[MSA_NAME!=&#39;MSA.Average&#39;, sizeRank:= frank(-POP_Adj), by=&#39;YEAR&#39;]
+plotData[MSA_NAME!=&#39;MSA.Average&#39;, sizeRank_region:= frank(-POP_Adj), by=.(YEAR, Region)]
+plotData[MSA_NAME!=&#39;MSA.Average&#39;, sizeRank_label:= paste0(&#39; (&#39;, sizeRank_region, &#39;,&#39;, sizeRank, &#39;)&#39;)]
+plotData[, label:= ifelse(MSA_NAME==&#39;MSA.Average&#39;, MSA_NAME, paste0(MSA.short, sizeRank_label))]</code></pre>
+<p>Finally, our plot will be more visually appealing with smooth curves that pass through a common point <span class="math inline">\((2003, 100)\)</span>. This can be achieved by fitting a polynomial regression (sans intercept) <span class="math display">\[
+popidx_j - 100 = \text{poly}(year_j - 2003, 5) \; \boldsymbol{\beta}_j
+\]</span> for each MSA <span class="math inline">\(j\)</span> and computing fitted values at sufficiently high resolution. I chose <span class="math inline">\(k = 5\)</span> as the polynomial degree because it produces a good visual result without overfitting the sample points. (Note that I exclude New Orleans, LA due to a large population shock (-25%) in the aftermath of Hurricane Katrina in 2005. A piecewise smooth might be more appropriate for this exceptional case.)</p>
+<pre class="r"><code>xgrid = seq(2003, 2016, .1)
+
+polyfit = plotData[MSA.short!=&#39;New Orleans, LA&#39;, .(
+  YEAR=xgrid,
+  POP_Idx=predict(
+    lm(I(POP_Idx - 100) ~ 0 + poly(YEAR - 2003, 5, raw=TRUE)),
+    newdata=data.frame(YEAR=xgrid)) + 100
+  ),
+  by=.(Region, MSA.short, line_color)]
+
+# Merge label
+plotData = plotData[, .(YEAR=as.double(YEAR), MSA.short, label)][
+  polyfit, on=.(YEAR, MSA.short)]</code></pre>
+<p>Now we’re ready to plot the data! We can assign a <code>ggplot</code> object to a variable for each Census region and pass these objects to <code>grid.arrange</code> to organize into a 2-by-2 panel.</p>
+<pre class="r"><code>for (region in c(&#39;Northeast&#39;,&#39;Midwest&#39;,&#39;South&#39;,&#39;West&#39;)) {
+  assign(paste0(&#39;p.&#39;,region),
+         ggplot(plotData[MSA.short!=&#39;New Orleans, LA&#39;],
+                aes(x=YEAR, y=POP_Idx, group=MSA.short, color=line_color)) +
+           scale_x_continuous(breaks=seq(2003,2016,2), limits=c(2003,2017.5)) +
+           scale_y_continuous(breaks=seq(80,150,10)) +
+           geom_line(data = plotData[Region==region], size=.25) +
+           geom_line(data = plotData[MSA.short==&#39;MSA.Average&#39;]) +
+           geom_text_repel(
+             data = plotData[(Region==region | is.na(Region)) &amp; YEAR==max(YEAR)],
+             aes(label = label), size=1.5, box.padding=unit(0,&#39;lines&#39;), nudge_x=.5,
+             direction=&#39;y&#39;) +
+           scale_color_manual(values = c(black=&#39;black&#39;, red=&#39;red&#39;)) +
+           labs(title = bquote(italic(.(region))),
+                x=&#39;&#39;, y=&#39;Population Index (Base Year = 2003)&#39;) +
+           theme_bw() +
+           theme(legend.position=&#39;none&#39;, plot.margin=margin(.5, 1.5, .1, .5, &#39;lines&#39;),
+                 panel.border=element_rect(color=NA))
+  )
+}; rm(region)
+
+grid.arrange(
+  top = textGrob(
+    label = expression(bolditalic(
+      &#39;Population Growth Trajectories of Large Metropolitan Areas, 2003-2016&#39;)),
+    gp=gpar(cex=1.6)
+  ),
+  bottom = textGrob(
+    label = expression(italic(
+      &#39;Data: Census.gov/programs-surveys/popest.html&#39;)),
+    x=unit(.95, &#39;npc&#39;), just=&#39;right&#39;, gp=gpar(cex=1.2)
+  ),
+  p.Northeast, p.Midwest, p.South, p.West, ncol=2
+)</code></pre>
+<p><img src="/blog/2017-09-29-population-growth-trajectories-of-u-s-metropolitan-areas_files/figure-html/unnamed-chunk-10-1.png" width="1152" /></p>
+<p>(You can right-click and “open in new tab” to magnify the image.)</p>
+<p>It’s nice to be able to see the full population trajectories—for example, we can see that Boston experienced negative growth in the years following 2003 but reversed course to become the Northeast’s fastest-growing metropolitan area over the past decade. One of the immediate takeaways, however, is that the most impressive growth is concentrated in the South and the West, led by the likes of Austin, Raleigh, and Las Vegas. (I’m reminded of this <a href="https://www.washingtonpost.com/realestate/fast-growing-technology-sector-is-fueling-a-housing-boom-in-cities-across-america/2017/01/26/5c72c276-a5d8-11e6-8042-f4d111c862d1_story.html">article</a>.)</p>
+<p>Finally, a note of caution regarding interpretation. The choice of 2003 as the base year is arbitrary, so take the ordering of the labels with a grain of salt. Moreover, today’s fastest-growing MSAs are not necessarily those highest on the y-scale, but rather those with the largest slopes at <span class="math inline">\(x = 2016\)</span> (roughly). There are mild distortions in these slopes due to <a href="https://en.wikipedia.org/wiki/Runge%27s_phenomenon">Runge’s phenomenon</a>, and it would be ill-advised to try to extrapolate more than a year or two into the future.<a href="#fn4" class="footnoteRef" id="fnref4"><sup>4</sup></a> (It’s doubtful that Pittsburgh, PA will see its population nosedive to zero in five years.)</p>
+<p><strong>Addendum.</strong> The <em>Wall Street Journal</em> produced a similar <a href="https://www.dropbox.com/s/7quwm2zzh56j272/NA-CO335A_SIOUX_16U_20170315160308.jpg?raw=1">graphic</a> for an excellent <a href="https://www.wsj.com/articles/as-many-midwest-cities-slump-sioux-falls-soars-1489743009">article</a> about Sioux Falls, SD earlier this year. (I like my version better :3) Oddly enough, I wasn’t able to locate any MSA population data from the Bureau of Economic Analysis, which is listed as the data source.</p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>See <a href="https://www.census.gov/content/dam/Census/data/developers/api-user-guide/api-guide.pdf">here</a> for the API documentation. The data may also be downloaded from <a href="https://www.census.gov/data/datasets/2016/demo/popest/total-metro-and-micro-statistical-areas.html">Metropolitan and Micropolitan Statistical Area Datasets</a> and <a href="https://www.census.gov/data/datasets/time-series/demo/popest/intercensal-2000-2010-counties.html">County Intercensal Datasets</a>.<a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>Micropolitan and metropolitan statistical areas are collectively called <em>core-based statistical areas</em> (CBSAs).<a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>Fortunately, the files seem to share a common format so it shouldn’t be too difficult to prepend earlier data.<a href="#fnref3">↩</a></p></li>
+<li id="fn4"><p>Maybe the smoothing step could be improved by running a penalized regression with penalty proportional to the deviation in slopes, i.e., something along the lines of <span class="math display">\[
+\min_\beta \left\{ (y - X\beta)^\intercal (y - X\beta) + \gamma ||(X \beta)&#39;(2015) - (1 + g_{2015, 2016})|| \right\}
+\]</span><a href="#fnref4">↩</a></p></li>
+</ol>
+</div>
