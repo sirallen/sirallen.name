@@ -19,7 +19,8 @@ library(ggplot2)
 library(ggrepel)
 library(grid)
 library(gridExtra)</code></pre>
-<pre class="r"><code>msa10.16 =
+<pre class="r"><code># Grab 2010-16 MSA-level estimates from the API
+msa10.16 =
   GET(
     url = paste0(&#39;https://api.census.gov/data/2016/pep/population?&#39;,
                  &#39;get=POP,DATE,DATE_DESC,GEONAME&#39;,
@@ -42,6 +43,7 @@ msa10.16[, `:=`(
     , c(&#39;POP&#39;,&#39;YEAR&#39;,&#39;MSA&#39;):= lapply(.SD, as.integer),
     .SDcols=c(&#39;POP&#39;,&#39;YEAR&#39;,&#39;MSA&#39;)]
 
+# Likewise for 2000-09 county-level estimates
 county00.09 =
   GET(
     url = paste0(&#39;https://api.census.gov/data/2000/pep/int_population?&#39;,
@@ -155,7 +157,7 @@ with(msa03.16[MSA==18880], {
          inset=.01)
 })</code></pre>
 <p><img src="/blog/2017-09-29-population-growth-trajectories-of-u-s-metropolitan-areas_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
-<p>Instead of calculating growth rates directly, let’s construct a population index, or <em>trajectory</em>, with base year 2003, <span class="math inline">\(\hat{X}_i = 100 \times \tilde{X}_i / X_{2003}\)</span>. Plotting the trajectories will give a nice visual representation while permitting approximate comparisons of growth for different MSAs, or for the same MSA at different points in time. Let’s also compute the average trajectory of all MSAs in our sample to provide a baseline comparison. (Note that summing <code>POP</code> by year gives us a population-weighted average, as opposed to equal-weighted.)</p>
+<p>Instead of calculating growth rates directly, let’s construct a population index, or <em>trajectory</em>, with base year 2003, <span class="math inline">\(\hat{X}_i = 100 \times \tilde{X}_i / X_{2003}\)</span>. Plotting the trajectories will give a nice visual representation of the data while permitting approximate comparisons of growth for different MSAs, or for the same MSA at different points in time. Let’s also compute the average trajectory of all MSAs in our sample to provide a baseline comparison. (Note that summing <code>POP</code> by year gives us a population-weighted average, as opposed to equal-weighted.)</p>
 <pre class="r"><code># Calculate population index (=100 in base year 2003)
 msa03.16[, POP_Idx:= 100 * POP_Adj / POP_Adj[1], by=&#39;MSA&#39;]
 
@@ -181,7 +183,7 @@ plotData[MSA.short==&#39;Urban Honolulu, HI&#39;, MSA.short:= &#39;Honolulu, HI&
 # Remove Puerto Rico
 plotData = plotData[!grepl(&#39;PR$&#39;, MSA.short)]
 
-# Population size ranks
+# Population size ranks &amp; labels
 plotData[MSA_NAME!=&#39;MSA.Average&#39;, sizeRank:= frank(-POP_Adj), by=&#39;YEAR&#39;]
 plotData[MSA_NAME!=&#39;MSA.Average&#39;, sizeRank_region:= frank(-POP_Adj), by=.(YEAR, Region)]
 plotData[MSA_NAME!=&#39;MSA.Average&#39;, sizeRank_label:= paste0(&#39; (&#39;, sizeRank_region, &#39;,&#39;, sizeRank, &#39;)&#39;)]

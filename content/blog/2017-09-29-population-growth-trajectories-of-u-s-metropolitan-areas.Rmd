@@ -27,6 +27,7 @@ library(grid)
 library(gridExtra)
 ```
 ```{r, eval=FALSE}
+# Grab 2010-16 MSA-level estimates from the API
 msa10.16 =
   GET(
     url = paste0('https://api.census.gov/data/2016/pep/population?',
@@ -50,6 +51,7 @@ msa10.16[, `:=`(
     , c('POP','YEAR','MSA'):= lapply(.SD, as.integer),
     .SDcols=c('POP','YEAR','MSA')]
 
+# Likewise for 2000-09 county-level estimates
 county00.09 =
   GET(
     url = paste0('https://api.census.gov/data/2000/pep/int_population?',
@@ -184,7 +186,7 @@ with(msa03.16[MSA==18880], {
 })
 ```
 
-Instead of calculating growth rates directly, let's construct a population index, or _trajectory_, with base year 2003, $\hat{X}_i = 100 \times \tilde{X}_i / X_{2003}$. Plotting the trajectories will give a nice visual representation while permitting approximate comparisons of growth for different MSAs, or for the same MSA at different points in time. Let's also compute the average trajectory of all MSAs in our sample to provide a baseline comparison. (Note that summing `POP` by year gives us a population-weighted average, as opposed to equal-weighted.)
+Instead of calculating growth rates directly, let's construct a population index, or _trajectory_, with base year 2003, $\hat{X}_i = 100 \times \tilde{X}_i / X_{2003}$. Plotting the trajectories will give a nice visual representation of the data while permitting approximate comparisons of growth for different MSAs, or for the same MSA at different points in time. Let's also compute the average trajectory of all MSAs in our sample to provide a baseline comparison. (Note that summing `POP` by year gives us a population-weighted average, as opposed to equal-weighted.)
 ```{r}
 # Calculate population index (=100 in base year 2003)
 msa03.16[, POP_Idx:= 100 * POP_Adj / POP_Adj[1], by='MSA']
@@ -214,7 +216,7 @@ plotData[MSA.short=='Urban Honolulu, HI', MSA.short:= 'Honolulu, HI']
 # Remove Puerto Rico
 plotData = plotData[!grepl('PR$', MSA.short)]
 
-# Population size ranks
+# Population size ranks & labels
 plotData[MSA_NAME!='MSA.Average', sizeRank:= frank(-POP_Adj), by='YEAR']
 plotData[MSA_NAME!='MSA.Average', sizeRank_region:= frank(-POP_Adj), by=.(YEAR, Region)]
 plotData[MSA_NAME!='MSA.Average', sizeRank_label:= paste0(' (', sizeRank_region, ',', sizeRank, ')')]
