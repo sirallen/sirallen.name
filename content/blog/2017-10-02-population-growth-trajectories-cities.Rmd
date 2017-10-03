@@ -11,7 +11,7 @@ tags: []
 knitr::opts_chunk$set(echo = TRUE, collapse = TRUE)
 ```
 
-Earlier this year I wanted to learn more about the population growth rates of cities in the United States. I had read that cities were burgeoning again after a period of stagnation in the early- and mid-2000s, and I had seen evidence in the cities where I lived. But what I found online was mostly limited to tables and charts like [this one](https://www.census.gov/content/dam/Census/library/visualizations/2017/comm/cb17-81-grahic-citypopestimate.pdf) which do little more than present static rankings over a fixed time period, failing to convey the extent to which growth waxes and wanes over time. Unsatisfied, I went to Census.gov to explore the data myself. This necessitated a non-trivial amount of data munging---maybe the reason that such charts as I imagined are difficult to come by---so I've decided to share my process below. The end result is [this nice visualization](https://www.dropbox.com/s/inyh0ka8zw9eqw6/CityGrowthByRegion_largeSmooth3.pdf?raw=1) which I hope to make interactive later.
+Earlier this year I wanted to learn more about the population growth rates of cities in the United States. I had read that cities were burgeoning again after a period of stagnation in the early- and mid-2000s, and I had seen evidence in the cities where I lived. But what I found online was mostly limited to tables and charts like [this one](https://www.census.gov/content/dam/Census/library/visualizations/2017/comm/cb17-81-grahic-citypopestimate.pdf) which do little more than present static rankings over a fixed time period, and fail to convey the extent to which growth waxes and wanes over time. Unsatisfied, I went to Census.gov to explore the data myself. This necessitated a non-trivial amount of data munging, so I've decided to share my process below. The end result is [this nice visualization](https://www.dropbox.com/s/inyh0ka8zw9eqw6/CityGrowthByRegion_largeSmooth3.pdf?raw=1) which I hope to make interactive later.
 
 The unit of analysis is an "incorporated place", which comprises a legally bounded entity of varying size, including cities, boroughs, towns, and villages.^[https://www.census.gov/content/dam/Census/data/developers/understandingplace.pdf] The Census publishes "intercensal" population estimates for each of these places on an annual basis, with necessary revisions back to the most recent census year. The data can be retrieved via calls to the Census API.^[See [here](https://www.census.gov/content/dam/Census/data/developers/api-user-guide/api-guide.pdf) for the API documentation. The data may also be downloaded from [Population and Housing Unit Estimates](https://www.census.gov/programs-surveys/popest/data/data-sets.All.html).]
 
@@ -74,6 +74,11 @@ print(city00.16)
 
 Now that we've retrieved and organized the data, let's first construct plot labels by computing each entity's population ranking---within its Census region^[https://www2.census.gov/geo/pdfs/maps-data/maps/reference/us_regdiv.pdf] as well as overall---and appending an integer pair to its name. There are far too many entities, so let's also restrict the sample to places with at least at least some number of residents (this way we can honestly call them "cities") and with estimates in every year of the sample period. The four Census regions don't produce a very equitable distribution of cities for my chart, so I'll set the cutoff to 250,000 for the Midwest, South, and West and relax it to 150,000 for the Northeast. Alternatively, one could group some mid-Atlantic states---DE, MD, DC, and possibly VA and WV---with those in the Northeast to create a bigger geography.
 ```{r}
+# Louisville/Jefferson County, KY --> Louisville, KY
+city00.16[place=='48006', City:= 'Louisville, KY']
+# Nashville-Davidson, TN --> Nashville, TN
+city00.16[place=='52006', City:= 'Nashville, TN']
+
 # Population size ranks & labels
 city00.16[, sizeRank:= frank(-POP), by='YEAR'][
   , sizeRank_region:= frank(-POP), by=.(YEAR, REGION)][
@@ -82,11 +87,6 @@ city00.16[, sizeRank:= frank(-POP), by='YEAR'][
 city00.16 = city00.16[city00.16[
   , .I[max(POP) > (if (REGION[1]=='Northeast') 1.5e5 else 2.5e5) & .N==17],
   by='City']$V1]
-
-# Louisville/Jefferson County, KY --> Louisville, KY
-city00.16[place=='48006', City:= 'Louisville, KY']
-# Nashville-Davidson, TN --> Nashville, TN
-city00.16[place=='52006', City:= 'Nashville, TN']
 ```
 
 There are several sharp discontinuities in 2009-2010, maybe due to some place boundaries being redefined after the 2010 Census. As we're ultimately interest in growth as opposed to levels, these discontinuities can be "corrected" by adjusting the population estimates. A reasonable adjustment is to assume the growth rate from 2009-2010 to be the average of growth rates from 2008-2009 and 2010-2011. If $X_i$ is the population in year $i$ and $g_{i,j} = X_j / X_i - 1$ the population growth rate from year $i$ to year $j$, define the adjusted estimates
@@ -171,7 +171,7 @@ for (region in c('Northeast','Midwest','South','West')) {
   assign(paste0('p.',region),
          ggplot(plotData[REGION==region],
                 aes(x=YEAR, y=POP_Idx_fit, group=City, color=line_color)) +
-           scale_x_continuous(breaks=seq(baseYear, 2016, 2), limits=c(baseYear, 2018)) +
+           scale_x_continuous(breaks=seq(baseYear, 2016, 2), limits=c(baseYear,2018)) +
            scale_y_continuous(breaks=seq(80, 200, 10)) +
            geom_line(size=.25) +
            geom_line(data = plotData[City=='City.Average']) +
