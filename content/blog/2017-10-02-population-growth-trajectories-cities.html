@@ -1,0 +1,210 @@
+---
+title: 'Data Viz: Population Growth Trajectories of U.S. Cities'
+author: Allen Sirolly
+date: '2017-10-02'
+slug: population-growth-trajectories-cities
+categories: []
+tags: []
+---
+
+
+
+<p>Earlier this year I wanted to learn more about the population growth rates of cities in the United States. I had read that cities were burgeoning again after a period of stagnation in the early- and mid-2000s, and I had seen evidence in the cities where I lived. But what I found online was mostly limited to tables and charts like <a href="https://www.census.gov/content/dam/Census/library/visualizations/2017/comm/cb17-81-grahic-citypopestimate.pdf">this one</a> which do little more than present static rankings over a fixed time period. And I’ve never even heard of those places. Unsatisfied, I went to Census.gov to explore the data myself. This necessitated a non-trivial amount of data munging—maybe the reason that such charts as I imagined are difficult to come by—so I’ve decided to share my process below. The end result is <a href="https://www.dropbox.com/s/inyh0ka8zw9eqw6/CityGrowthByRegion_largeSmooth3.pdf?raw=1">this nice visualization</a> which I hope to make interactive later.</p>
+<p>The unit of analysis is an “incorporated place”, which comprises a legally bounded entity of varying size, including cities, boroughs, towns, and villages.<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> The Census publishes “intercensal” population estimates for each of these places on an annual basis, with necessary revisions back to the most recent census year. The data can be retrieved via calls to the Census API.<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a></p>
+<p>(The following code is available as a plain R script <a href="https://www.dropbox.com/s/67d9cztxzsnbc0u/_Census-city-growth.R?raw=1">here</a>.)</p>
+<pre class="r"><code>library(httr)
+library(purrr)
+library(stringr)
+library(data.table)
+library(ggplot2)
+library(ggrepel)
+library(grid)
+library(gridExtra)</code></pre>
+<pre class="r"><code># Grab data via the API
+city00.16 = c(
+  GET(
+    # 2000 - 2009
+    url = paste0(&#39;https://api.census.gov/data/2000/pep/int_population?&#39;,
+                 &#39;get=POP,DATE,DATE_DESC,GEONAME,REGION&#39;,
+                 &#39;&amp;for=place:*&#39;)
+  ) %&gt;%
+    content(),
+  GET(
+    # 2010 - 2016
+    url = paste0(&#39;https://api.census.gov/data/2016/pep/population?&#39;,
+                 &#39;get=POP,DATE,DATE_DESC,GEONAME,REGION&#39;,
+                 &#39;&amp;for=place:*&#39;)
+  ) %&gt;%
+    content()
+) %&gt;%
+  map(setNames, unlist(.[[1]])) %&gt;%
+  keep(function(x) grepl(&#39;estimate$&#39;, x$DATE_DESC)) %&gt;%
+  rbindlist() %&gt;%
+  setnames(&#39;GEONAME&#39;, &#39;City&#39;)
+
+city00.16[, `:=`(
+  POP = as.integer(POP),
+  REGION = factor(REGION, labels=c(&#39;Northeast&#39;,&#39;Midwest&#39;,&#39;South&#39;,&#39;West&#39;)),
+  YEAR = as.integer(str_extract(DATE_DESC, &#39;\\d{4}&#39;)),
+  STATE = c(state.abb, &#39;DC&#39;)[
+    match(str_extract(City, &#39;(?&lt;=, ).*$&#39;),
+          c(state.name, &#39;District of Columbia&#39;))],
+  City = sub(&#39; [a-z].*&#39;, &#39;&#39;, City),
+  DATE = NULL,
+  DATE_DESC = NULL)][
+    , `:=`(
+      City = paste0(City, &#39;, &#39;, STATE),
+      STATE = NULL)]</code></pre>
+<pre class="r"><code>print(city00.16)
+##          POP          City REGION state place YEAR
+##      1: 2985 Abbeville, AL  South    01 00124 2000
+##      2: 2941 Abbeville, AL  South    01 00124 2001
+##      3: 2909 Abbeville, AL  South    01 00124 2002
+##      4: 2882 Abbeville, AL  South    01 00124 2003
+##      5: 2857 Abbeville, AL  South    01 00124 2004
+##     ---                                           
+## 331726:  155     Yoder, WY   West    56 86665 2012
+## 331727:  159     Yoder, WY   West    56 86665 2013
+## 331728:  162     Yoder, WY   West    56 86665 2014
+## 331729:  162     Yoder, WY   West    56 86665 2015
+## 331730:  159     Yoder, WY   West    56 86665 2016</code></pre>
+<p>Now that we’ve retrieved and organized the data, let’s first construct plot labels by computing each entity’s population ranking—within its Census region<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a> as well as overall—and appending an integer pair to its name. There are far too many entities, so let’s also restrict the sample to places with at least at least some number of residents, and with estimates in every year of the sample period. (This way we can honestly call them “cities.”) The four Census regions don’t produce a very equitable distribution of cities for my chart, so I’ll set the cutoff to 250,000 for the Midwest, South, and West and relax it to 150,000 for the Northeast.</p>
+<pre class="r"><code># Population size ranks &amp; labels
+city00.16[, sizeRank:= frank(-POP), by=&#39;YEAR&#39;][
+  , sizeRank_region:= frank(-POP), by=.(YEAR, REGION)][
+    YEAR==2016, label:= paste0(City, &#39; (&#39;, sizeRank_region, &#39;,&#39;, sizeRank, &#39;)&#39;)]
+
+city00.16 = city00.16[city00.16[
+  , .I[max(POP) &gt; (if (REGION[1]==&#39;Northeast&#39;) 1.5e5 else 2.5e5) &amp; .N==17],
+  by=&#39;City&#39;]$V1]
+
+# Louisville/Jefferson County, KY --&gt; Louisville, KY
+city00.16[place==&#39;48006&#39;, City:= &#39;Louisville, KY&#39;]
+# Nashville-Davidson, TN --&gt; Nashville, TN
+city00.16[place==&#39;52006&#39;, City:= &#39;Nashville, TN&#39;]</code></pre>
+<p>There are several sharp discontinuities in 2009-2010, maybe due to some place boundaries being redefined after the 2010 Census. As we’re ultimately interest in growth as opposed to levels, these discontinuities can be “corrected” by adjusting the population estimates. A reasonable adjustment is to assume the growth rate from 2009-2010 to be the average of growth rates from 2008-2009 and 2010-2011. If <span class="math inline">\(X_i\)</span> is the population in year <span class="math inline">\(i\)</span> and <span class="math inline">\(g_{i,j} = X_j / X_i - 1\)</span> the population growth rate from year <span class="math inline">\(i\)</span> to year <span class="math inline">\(j\)</span>, define the adjusted estimates <span class="math display">\[
+\tilde{X}_i = X_{2009} (1 + g_{2010, i}) \sqrt{(1 + g_{2008, 2009})(1 + g_{2010, 2011})} \\[1.2em]
+= X_i \frac{X_{2009}}{X_{2010}} \sqrt{\frac{X_{2009}}{X_{2008}} \cdot \frac{X_{2011}}{X_{2010}}}
+\]</span> for <span class="math inline">\(i \geq 2010\)</span> and <span class="math inline">\(\tilde{X}_i = X_i\)</span> for <span class="math inline">\(i &lt; 2010\)</span>. Doing it this way essentially joins the segments <span class="math inline">\(X_{2003:2009}\)</span> and <span class="math inline">\(X_{2010:2016}\)</span> while preserving growth rates within each. But bear in mind that some place definitions may not be consistent over the entire sample period.</p>
+<p>Sanity check that it works:</p>
+<pre class="r"><code>adjust = function(x, i) {
+  ifelse(i &lt; 2010, x,
+         x / x[i==2010] * x[i==2009] *
+           sqrt(x[i==2009]/x[i==2008] * x[i==2011]/x[i==2010]))
+}
+
+city00.16[#City %in% c(&#39;Omaha, NE&#39;, &#39;Colorado Springs, CO&#39;, &#39;Austin, TX&#39;),
+          , POP_Adj:= adjust(POP, YEAR), by=&#39;City&#39;]
+
+with(city00.16[City==&#39;Omaha, NE&#39;], {
+  matplot(YEAR, cbind(POP, POP_Adj)/1000, type=&#39;l&#39;, las=1,
+          ylab=&#39;Population (thousands)&#39;, main=City[1])
+  legend(&#39;topleft&#39;, c(&#39;POP&#39;, &#39;POP_Adj&#39;), lty=1:2, col=c(&#39;black&#39;,&#39;red&#39;),
+         inset=.01)
+})</code></pre>
+<p><img src="/blog/2017-10-02-population-growth-trajectories-cities_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p>Instead of calculating growth rates directly, let’s construct a population index, or <em>trajectory</em>, with base year 2002, <span class="math inline">\(\hat{X}_i = 100 \times \tilde{X}_i / X_{2002}\)</span>. Plotting the trajectories will give a nice visual representation of the data while permitting approximate comparisons of growth for different cities, or for the same city at different points in time. Let’s also compute the average trajectory of all cities in our sample to provide a baseline comparison. (Note that summing <code>POP</code> by year gives us a population-weighted average, as opposed to equal-weighted.)</p>
+<pre class="r"><code>baseYear = 2002
+
+# Calculate population index (=100 in base year)
+city00.16[, POP_Idx:= 100 * POP_Adj / POP_Adj[YEAR==baseYear], by=&#39;City&#39;]
+
+city.Avg =
+  city00.16[, .(City=&#39;City.Average&#39;, label=&#39;City.Average&#39;, POP_Adj=sum(POP_Adj)),
+           keyby=&#39;YEAR&#39;][
+             , POP_Idx:= 100 * POP_Adj / POP_Adj[YEAR==baseYear]]
+
+plotData = rbindlist(
+  list(
+    black=city00.16,
+    red=city.Avg
+  ),
+  fill=TRUE, idcol=&#39;line_color&#39;)[
+    YEAR &gt;= baseYear]</code></pre>
+<p>Finally, our plot will be more visually appealing with smooth curves that pass through a common point <span class="math inline">\((2002, 100)\)</span>. This can be achieved by fitting a polynomial regression (sans intercept) <span class="math display">\[
+popidx_j - 100 = \text{poly}(year_j - 2002, 5) \; \boldsymbol{\beta}_j + \boldsymbol{\varepsilon}_j
+\]</span> for each city <span class="math inline">\(j\)</span> and computing fitted values at sufficiently high resolution.<a href="#fn4" class="footnoteRef" id="fnref4"><sup>4</sup></a> I chose <span class="math inline">\(k = 5\)</span> as the polynomial degree because it produces a good visual result without overfitting or underfitting the sample points. (I exclude New Orleans, LA due to a large population shock (-25%) in the aftermath of Hurricane Katrina in 2005. A piecewise smooth might be more appropriate for this exceptional case.)</p>
+<pre class="r"><code>plotData = plotData[City!=&#39;New Orleans, LA&#39;]
+
+xgrid = seq(baseYear, 2016, .1)
+
+polyfit = plotData[, .(
+  YEAR = xgrid,
+  POP_Idx_fit = predict(
+    lm(I(POP_Idx - 100) ~ 0 + poly(YEAR - baseYear, 5, raw=TRUE)),
+    newdata=data.frame(YEAR=xgrid)) + 100
+),
+by=.(REGION, City, line_color)]
+
+plotData = plotData[, .(YEAR=as.double(YEAR), POP_Idx, City, label)][
+  polyfit, on=.(YEAR, City)]</code></pre>
+<p>One potential concern is the instability of polynomial fits near the endpoints, known as <a href="https://en.wikipedia.org/wiki/Runge%27s_phenomenon">Runge’s phenomenon</a>. This produces distortions in the slopes, and it would be ill-advised to try to extrapolate the trajectories more than a year or two into the future. One possible remedy is to fit a penalized polynomial regression with penalty proportional to the deviation in slopes, i.e., something along the lines of <span class="math display">\[
+\min_\beta \left\{ \|y - f(x;\beta) \|^2+ \lambda \left[ (f&#39;(2016) - (\hat{X}_{2016} - \hat{X}_{2015}))^2 + (f&#39;(2002) - (\hat{X}_{2003} - \hat{X}_{2002}))^2 \right] \right\}
+\]</span> where <span class="math inline">\(f(x;\beta) = \text{poly}(x, k) \,\boldsymbol{\beta}\)</span> and <span class="math inline">\(\lambda\)</span> is a tuneable hyperparameter. Of course, this will come at the cost of a lower-quality fit. Based on a visual inspection of the trajectories with and without polynomial smoothing, it looks like none of the distortions are too severe, so I won’t bother implementing this.</p>
+<p>That said, now we’re ready to plot the data! We can assign a <code>ggplot</code> object to a variable for each Census region and pass these objects to <code>gridExtra::grid.arrange</code> to organize into a 2-by-2 panel. (Perhaps this could just as well be accomplished with <code>ggplot2::facet_wrap</code>.) Note that the use of the <code>direction</code> argument in <code>ggrepel::geom_text_repel</code> currently requires the development version of the package, which can be installed from GitHub.</p>
+<pre class="r"><code>for (region in c(&#39;Northeast&#39;,&#39;Midwest&#39;,&#39;South&#39;,&#39;West&#39;)) {
+  assign(paste0(&#39;p.&#39;,region),
+         ggplot(plotData[REGION==region],
+                aes(x=YEAR, y=POP_Idx_fit, group=City, color=line_color)) +
+           scale_x_continuous(breaks=seq(baseYear, 2016, 2), limits=c(baseYear, 2018)) +
+           scale_y_continuous(breaks=seq(80, 200, 10)) +
+           geom_line(size=.25) +
+           geom_line(data = plotData[City==&#39;City.Average&#39;]) +
+           geom_text_repel(
+             data = plotData[(REGION==region | is.na(REGION)) &amp; YEAR==max(YEAR)],
+             aes(label = label), size=1.5, box.padding=0,
+             direction=&#39;y&#39;, xlim=c(2016.1, NA)) +
+           scale_color_manual(values = c(black=&#39;black&#39;, red=&#39;red&#39;)) +
+           labs(title = bquote(italic(.(region))),
+                x=&#39;&#39;, y=&#39;Population Index (Base Year = 2000)&#39;) +
+           theme_bw() +
+           theme(legend.position=&#39;none&#39;, plot.margin=margin(.5, 1.5, .1, .5, &#39;lines&#39;),
+                 panel.border=element_rect(color=NA))
+  )
+}; rm(region)
+
+grid.arrange(
+  top = textGrob(
+    label = expression(bolditalic(
+      &#39;Population Growth Trajectories of Large Cities, 2002-2016&#39;)),
+    gp=gpar(cex=1.6)
+  ),
+  bottom = textGrob(
+    label = expression(italic(
+      &#39;Data: Census.gov/programs-surveys/popest.html&#39;)),
+    x=unit(.95, &#39;npc&#39;), just=&#39;right&#39;, gp=gpar(cex=1.2)
+  ),
+  p.Northeast, p.Midwest, p.South, p.West, ncol=2
+)</code></pre>
+<p><img src="/blog/2017-10-02-population-growth-trajectories-cities_files/figure-html/unnamed-chunk-8-1.png" width="1152" /></p>
+<p>(You can right-click and “open in new tab” to magnify the image.)</p>
+<p>It’s nice to be able to see the full population trajectories—for example, we can see that Boston experienced negative growth in the years following 2002 but reversed course to become the Northeast’s fastest-growing large city over the past decade. One of the immediate takeaways, however, is that the most impressive growth is concentrated in the South and the West, led by the likes of Raleigh, NC, Forth Worth, TX, Irvine, CA, and Henderson, NV. (I’m reminded of this <a href="https://www.washingtonpost.com/realestate/fast-growing-technology-sector-is-fueling-a-housing-boom-in-cities-across-america/2017/01/26/5c72c276-a5d8-11e6-8042-f4d111c862d1_story.html">article</a>.) By contrast, a number of large cities in the Rust Belt have suffered significant population declines.</p>
+<p>Finally, a note of caution regarding interpretation. The choice of 2002 as the base year is arbitrary (I chose it so that the range would be 15 years), so take the ordering of the labels with a grain of salt. Moreover, today’s fastest-growing cities are not necessarily those highest on the y-scale, but rather those with the largest slopes at <span class="math inline">\(x = 2016\)</span> (roughly) which, as I’ve already argued, lose accuracy with polynomial fitting.</p>
+<div id="addenda" class="section level1">
+<h1>Addenda</h1>
+<ol style="list-style-type: decimal">
+<li><p>The <em>Wall Street Journal</em> produced a similar <a href="https://www.dropbox.com/s/7quwm2zzh56j272/NA-CO335A_SIOUX_16U_20170315160308.jpg?raw=1">graphic</a> for an excellent <a href="https://www.wsj.com/articles/as-many-midwest-cities-slump-sioux-falls-soars-1489743009">article</a> about Sioux Falls, SD earlier this year. Oddly, I wasn’t able to locate any MSA population data from the Bureau of Economic Analysis, which is listed as the data source. I did, however, find BEA data on <a href="https://www.bea.gov/newsreleases/regional/gdp_metro/gdp_metro_newsrelease.htm">GDP by MSA</a> which looks interesting.</p></li>
+<li><p>I originally made this visualization using <em>Metropolitan Statistical Areas</em> (MSAs), each of which comprises an urban center in addition to outlying counties. They’re much too large to be called cities so I ended up revising my work (which actually simplified the data munging quite a bit). But the original code and graphic are available <a href="https://www.dropbox.com/s/slvg4nno6hwidtk/_Census-msa-growth.R?raw=1">here</a> and <a href="https://www.dropbox.com/s/zw7fmq20bf38l3p/CityGrowthByRegion_largeSmooth2.pdf?raw=1">here</a>. For posterity or something.</p></li>
+<li><p>Here’s a joyplot of growth densities by year, for all cities that cleared our quarter-million population hurdle. Tails are truncated by the <code>rel_min_height</code> argument.</p></li>
+</ol>
+<pre class="r"><code>library(ggridges)
+
+city00.16[, .(YEAR=YEAR[-1], g=100*diff(log(POP_Idx))), by=&#39;City&#39;] %&gt;%
+  ggplot(aes(x = g, y = factor(YEAR, levels=2016:2001))) +
+  geom_density_ridges(rel_min_height=.01, fill=&#39;royalblue&#39;, alpha=.5) +
+  scale_x_continuous(limits=c(-3 ,6)) +
+  labs(x=&#39;YoY population growth (%)&#39;, y=&#39;&#39;) +
+  theme_bw() +
+  theme(panel.border=element_rect(color=NA))
+## Picking joint bandwidth of 0.373</code></pre>
+<p><img src="/blog/2017-10-02-population-growth-trajectories-cities_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p><a href="https://www.census.gov/content/dam/Census/data/developers/understandingplace.pdf" class="uri">https://www.census.gov/content/dam/Census/data/developers/understandingplace.pdf</a><a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>See <a href="https://www.census.gov/content/dam/Census/data/developers/api-user-guide/api-guide.pdf">here</a> for the API documentation. The data may also be downloaded from <a href="https://www.census.gov/programs-surveys/popest/data/data-sets.All.html">Population and Housing Unit Estimates</a>.<a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p><a href="https://www2.census.gov/geo/pdfs/maps-data/maps/reference/us_regdiv.pdf" class="uri">https://www2.census.gov/geo/pdfs/maps-data/maps/reference/us_regdiv.pdf</a><a href="#fnref3">↩</a></p></li>
+<li id="fn4"><p><span class="math inline">\(popidx_j\)</span>, <span class="math inline">\(year_j\)</span> and <span class="math inline">\(\boldsymbol{\varepsilon}_j\)</span> are length-14 column vectors, <span class="math inline">\(\boldsymbol{\beta}_j\)</span> is a length-5 column vector, and <span class="math inline">\(\text{poly}(\cdot, 5)\)</span> produces a 14 x 5 matrix.<a href="#fnref4">↩</a></p></li>
+</ol>
+</div>
