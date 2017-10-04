@@ -11,7 +11,7 @@ tags: []
 knitr::opts_chunk$set(echo = TRUE, collapse = TRUE)
 ```
 
-Earlier this year I wanted to learn more about the population growth rates of cities in the United States. I had read that cities were burgeoning again after a period of stagnation in the early- and mid-2000s, and I had seen evidence in the cities where I lived. But what I found online was mostly limited to tables and charts like [this one](https://www.census.gov/content/dam/Census/library/visualizations/2017/comm/cb17-81-grahic-citypopestimate.pdf) which do little more than present static rankings over a fixed time period, and fail to convey the extent to which growth waxes and wanes over time. Unsatisfied, I went to Census.gov to explore the data myself. This necessitated a non-trivial amount of data munging, so I've decided to share my process below. The end result is [this nice visualization](https://www.dropbox.com/s/inyh0ka8zw9eqw6/CityGrowthByRegion_largeSmooth3.pdf?raw=1) which I hope to make interactive later.
+Earlier this year I wanted to learn more about the population growth rates of cities in the United States. I had read that cities were burgeoning again after a period of stagnation in the early- and mid-2000s, and I had seen evidence in the cities where I lived. But what I found online was mostly limited to tables and charts like [this one](https://www.census.gov/content/dam/Census/library/visualizations/2017/comm/cb17-81-grahic-citypopestimate.pdf) which do little more than present static rankings over a fixed time period, and fail to convey the extent to which growth waxes and wanes over time. Unsatisfied, I went to Census.gov to explore the data myself. This necessitated a non-trivial amount of data munging, so I've decided to share my process below. The end result is [this nice visualization](https://www.dropbox.com/s/sjrw76awpzmaqq9/CityGrowthByRegion_largeSmooth.pdf?raw=1) which I hope to make interactive later.
 
 The unit of analysis is an "incorporated place", which comprises a legally bounded entity of varying size, including cities, boroughs, towns, and villages.^[https://www.census.gov/content/dam/Census/data/developers/understandingplace.pdf] The Census publishes "intercensal" population estimates for each of these places on an annual basis, with necessary revisions back to the most recent census year. The data can be retrieved via calls to the Census API.^[See [here](https://www.census.gov/content/dam/Census/data/developers/api-user-guide/api-guide.pdf) for the API documentation. The data may also be downloaded from [Population and Housing Unit Estimates](https://www.census.gov/programs-surveys/popest/data/data-sets.All.html).]
 
@@ -74,10 +74,16 @@ print(city00.16)
 
 Now that we've retrieved and organized the data, let's first construct plot labels by computing each entity's population ranking---within its Census region^[https://www2.census.gov/geo/pdfs/maps-data/maps/reference/us_regdiv.pdf] as well as overall---and appending an integer pair to its name. There are far too many entities, so let's also restrict the sample to places with at least at least some number of residents (this way we can honestly call them "cities") and with estimates in every year of the sample period. The four Census regions don't produce a very equitable distribution of cities for my chart, so I'll set the cutoff to 250,000 for the Midwest, South, and West and relax it to 150,000 for the Northeast. Alternatively, one could group some mid-Atlantic states---DE, MD, DC, and possibly VA and WV---with those in the Northeast to create a bigger geography.
 ```{r}
-# Louisville/Jefferson County, KY --> Louisville, KY
-city00.16[place=='48006', City:= 'Louisville, KY']
-# Nashville-Davidson, TN --> Nashville, TN
-city00.16[place=='52006', City:= 'Nashville, TN']
+rekey = function(data) setkey(data, City, YEAR)
+
+rekey(city00.16)
+
+# combine Las Vegas, NV & North Las Vegas, NV
+city00.16['Las Vegas, NV', POP:= POP + city00.16['North Las Vegas, NV', POP]]
+city00.16 = city00.16[!'North Las Vegas, NV']
+
+city00.16['Louisville/Jefferson County, KY', City:= 'Louisville, KY'] %>% rekey()
+city00.16['Nashville-Davidson, TN', City:= 'Nashville, TN'] %>% rekey()
 
 # Population size ranks & labels
 city00.16[, sizeRank:= frank(-POP), by='YEAR'][
@@ -104,10 +110,9 @@ adjust = function(x, i) {
            sqrt(x[i==2009]/x[i==2008] * x[i==2011]/x[i==2010]))
 }
 
-city00.16[#City %in% c('Omaha, NE', 'Colorado Springs, CO', 'Austin, TX'),
-          , POP_Adj:= adjust(POP, YEAR), by='City']
+city00.16[, POP_Adj:= adjust(POP, YEAR), by='City']
 
-with(city00.16[City=='Omaha, NE'], {
+with(city00.16['Omaha, NE'], {
   matplot(YEAR, cbind(POP, POP_Adj)/1000, type='l', las=1,
           ylab='Population (thousands)', main=City[1])
   legend('topleft', c('POP', 'POP_Adj'), lty=1:2, col=c('black','red'),
@@ -127,13 +132,11 @@ city.Avg =
            keyby='YEAR'][
              , POP_Idx:= 100 * POP_Adj / POP_Adj[YEAR==baseYear]]
 
-plotData = rbindlist(
-  list(
-    black=city00.16,
-    red=city.Avg
-  ),
-  fill=TRUE, idcol='line_color')[
-    YEAR >= baseYear]
+plotData =
+  list(black = city00.16, red = city.Avg) %>%
+  rbindlist(fill=TRUE, idcol='line_color') %>%
+  `[`(YEAR >= baseYear) %>%
+  rekey()
 ```
 
 Finally, our plot will be more visually appealing with smooth curves that pass through a common point $(`r baseYear`, 100)$. This can be achieved by fitting a polynomial regression (sans intercept)
@@ -143,7 +146,7 @@ $$
 for each city $j$ and computing fitted values at sufficiently high resolution.^[$popidx_j$, $year_j$ and $\boldsymbol{\varepsilon}_j$ are length-14 column vectors, $\boldsymbol{\beta}_j$ is a length-5 column vector, and $\text{poly}(\cdot, 5)$ produces a 14 x 5 matrix.] I chose $k = 5$ as the polynomial degree because it produces a good visual result without overfitting or underfitting the sample points. (I exclude New Orleans, LA due to a large population shock (-25%) in the aftermath of Hurricane Katrina in 2005. A piecewise smooth might be more appropriate for this exceptional case.)
 
 ```{r}
-plotData = plotData[City!='New Orleans, LA']
+plotData = plotData[!'New Orleans, LA']
 
 xgrid = seq(baseYear, 2016, .1)
 
