@@ -49,7 +49,7 @@ city00.16[, `:=`(
   STATE = c(state.abb, &#39;DC&#39;)[
     match(str_extract(City, &#39;(?&lt;=, ).*$&#39;),
           c(state.name, &#39;District of Columbia&#39;))],
-  City = sub(&#39; [a-z].*&#39;, &#39;&#39;, City),
+  City = sub(&#39;( [a-z].*)?,.*&#39;, &#39;&#39;, City),
   DATE = NULL,
   DATE_DESC = NULL)][
     , `:=`(
@@ -73,10 +73,11 @@ city00.16[, `:=`(
 
 rekey(city00.16)
 
-# combine Las Vegas, NV &amp; North Las Vegas, NV
+# Combine Las Vegas, NV &amp; North Las Vegas, NV
 city00.16[&#39;Las Vegas, NV&#39;, POP:= POP + city00.16[&#39;North Las Vegas, NV&#39;, POP]]
 city00.16 = city00.16[!&#39;North Las Vegas, NV&#39;]
 
+# Shorten names of consolidated cities
 city00.16[&#39;Louisville/Jefferson County, KY&#39;, City:= &#39;Louisville, KY&#39;] %&gt;% rekey()
 city00.16[&#39;Nashville-Davidson, TN&#39;, City:= &#39;Nashville, TN&#39;] %&gt;% rekey()
 
