@@ -13,6 +13,7 @@ tags: []
 <p>The unit of analysis is an “incorporated place”, which comprises a legally bounded entity of varying size, including cities, boroughs, towns, and villages.<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> The Census publishes “intercensal” population estimates for each of these places on an annual basis, with necessary revisions back to the most recent census year. The data can be retrieved via calls to the Census API.<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a></p>
 <p>(The following code is available as a plain R script <a href="https://www.dropbox.com/s/67d9cztxzsnbc0u/_Census-city-growth.R?raw=1">here</a>.)</p>
 <pre class="r"><code>library(httr)
+## Warning: package &#39;httr&#39; was built under R version 3.4.2
 library(purrr)
 library(stringr)
 library(data.table)
@@ -72,10 +73,6 @@ city00.16[, `:=`(
 <pre class="r"><code>rekey = function(data) setkey(data, City, YEAR)
 
 rekey(city00.16)
-
-# Combine Las Vegas, NV &amp; North Las Vegas, NV
-city00.16[&#39;Las Vegas, NV&#39;, POP:= POP + city00.16[&#39;North Las Vegas, NV&#39;, POP]]
-city00.16 = city00.16[!&#39;North Las Vegas, NV&#39;]
 
 # Shorten names of consolidated cities
 city00.16[&#39;Louisville/Jefferson County, KY&#39;, City:= &#39;Louisville, KY&#39;] %&gt;% rekey()
@@ -142,9 +139,9 @@ by=.(REGION, City, line_color)]
 
 plotData = plotData[, .(YEAR=as.double(YEAR), POP_Idx, City, label)][
   polyfit, on=.(YEAR, City)]</code></pre>
-<p>One potential concern is the instability of polynomial fits near the endpoints, known as <a href="https://en.wikipedia.org/wiki/Runge%27s_phenomenon">Runge’s phenomenon</a>. This produces distortions in the slopes, and it would be ill-advised to try to extrapolate the trajectories more than a year or two into the future. One possible remedy is to fit a penalized polynomial regression with penalty proportional to the deviation in slopes, i.e., something along the lines of <span class="math display">\[
+<p>One potential concern is the instability of polynomial fits near the endpoints, known as <a href="https://en.wikipedia.org/wiki/Runge%27s_phenomenon">Runge’s phenomenon</a>. This produces distortions in the slopes, making it ill-advised to try to extrapolate the trajectories into the future. One possible remedy is to fit a penalized polynomial regression with penalty proportional to the deviation in slopes, i.e., something along the lines of <span class="math display">\[
 \min_\beta \left\{ \|y - f(x;\beta) \|^2+ \lambda \left[ (f&#39;(2016) - (\hat{X}_{2016} - \hat{X}_{2015}))^2 + (f&#39;(2002) - (\hat{X}_{2003} - \hat{X}_{2002}))^2 \right] \right\}
-\]</span> where <span class="math inline">\(f(x;\beta) = \text{poly}(x, k) \,\boldsymbol{\beta}\)</span> and <span class="math inline">\(\lambda\)</span> is a tuneable hyperparameter. Of course, this will come at the cost of a lower-quality fit. Based on a visual inspection of the trajectories with and without polynomial smoothing, it looks like none of the distortions are too severe, so I won’t bother implementing this.</p>
+\]</span> where <span class="math inline">\(f(x;\beta) = \text{poly}(x, k) \,\boldsymbol{\beta}\)</span> and <span class="math inline">\(\lambda\)</span> is a tuneable hyperparameter. Of course, this will come at the cost of a lower-quality fit. Based on a visual inspection of the trajectories with and without polynomial smoothing, it looks like none of the distortions are too severe, so I won’t bother implementing this. (An even better option would be to fit a spline; I do this in the interactive version.)</p>
 <p>That said, now we’re ready to plot the data! We can assign a <code>ggplot</code> object to a variable for each Census region and pass these objects to <code>gridExtra::grid.arrange</code> to organize into a 2-by-2 panel. (Perhaps this could just as well be accomplished with <code>ggplot2::facet_wrap</code>.) Note that the use of the <code>direction</code> argument in <code>ggrepel::geom_text_repel</code> currently requires the development version of the package, which can be installed from GitHub.</p>
 <pre class="r"><code>for (region in c(&#39;Northeast&#39;,&#39;Midwest&#39;,&#39;South&#39;,&#39;West&#39;)) {
   assign(paste0(&#39;p.&#39;,region),
@@ -183,7 +180,7 @@ grid.arrange(
 <p><img src="/blog/2017-10-02-population-growth-trajectories-cities_files/figure-html/unnamed-chunk-8-1.png" width="1152" /></p>
 <p>(You can right-click and “open in new tab” to magnify the image.)</p>
 <p>It’s nice to be able to see the full population trajectories—for example, we can see that Boston experienced negative growth in the years following 2002 but reversed course to become the Northeast’s fastest-growing large city over the past decade. One of the immediate takeaways, however, is that the most impressive growth is concentrated in the South and the West, led by the likes of Raleigh, NC, Forth Worth, TX, Irvine, CA, and Henderson, NV. (I’m reminded of this <a href="https://www.washingtonpost.com/realestate/fast-growing-technology-sector-is-fueling-a-housing-boom-in-cities-across-america/2017/01/26/5c72c276-a5d8-11e6-8042-f4d111c862d1_story.html">article</a>.) By contrast, a number of large cities in the Rust Belt have suffered significant population declines.</p>
-<p>Finally, a note of caution regarding interpretation. The choice of 2002 as the base year is arbitrary (I chose it so that the range would be 15 years), so take the ordering of the labels with a grain of salt. Moreover, today’s fastest-growing cities are not necessarily those highest on the y-scale, but rather those with the largest slopes at <span class="math inline">\(x = 2016\)</span> (roughly) which, as I’ve already argued, can be misleading with polynomial smoothing.</p>
+<p>I’ll end with a few notes of caution regarding interpretation. The choice of 2002 as the base year is arbitrary (I chose it so that the range would be 15 years), so take the ordering of the labels with a grain of salt. Moreover, today’s fastest-growing cities are not necessarily those highest on the y-scale, but rather those with the largest slopes at <span class="math inline">\(x = 2016\)</span> (roughly) which, as I’ve already argued, can be misleading with polynomial smoothing. Finally, and perhaps most importantly, it’s worth paying attention to how city geographies are defined—I’ve completely glossed over this, but it’s not at all obvious how to determine boundaries when measuring population. The “incorporated places” that I’ve analyzed here frequently do not conform with the colloquial definitions of those places that people are familiar with.</p>
 <div id="addenda" class="section level1">
 <h1>Addenda</h1>
 <ol style="list-style-type: decimal">
@@ -200,7 +197,7 @@ city00.16[, .(YEAR=YEAR[-1], g=100*diff(log(POP_Idx))), by=&#39;City&#39;] %&gt;
   labs(x=&#39;YoY population growth (%)&#39;, y=&#39;&#39;) +
   theme_bw() +
   theme(panel.border=element_rect(color=NA))
-## Picking joint bandwidth of 0.374</code></pre>
+## Picking joint bandwidth of 0.373</code></pre>
 <p><img src="/blog/2017-10-02-population-growth-trajectories-cities_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
 </div>
 <div class="footnotes">

@@ -78,10 +78,6 @@ rekey = function(data) setkey(data, City, YEAR)
 
 rekey(city00.16)
 
-# Combine Las Vegas, NV & North Las Vegas, NV
-city00.16['Las Vegas, NV', POP:= POP + city00.16['North Las Vegas, NV', POP]]
-city00.16 = city00.16[!'North Las Vegas, NV']
-
 # Shorten names of consolidated cities
 city00.16['Louisville/Jefferson County, KY', City:= 'Louisville, KY'] %>% rekey()
 city00.16['Nashville-Davidson, TN', City:= 'Nashville, TN'] %>% rekey()
@@ -163,11 +159,11 @@ plotData = plotData[, .(YEAR=as.double(YEAR), POP_Idx, City, label)][
   polyfit, on=.(YEAR, City)]
 ```
 
-One potential concern is the instability of polynomial fits near the endpoints, known as [Runge's phenomenon](https://en.wikipedia.org/wiki/Runge%27s_phenomenon). This produces distortions in the slopes, and it would be ill-advised to try to extrapolate the trajectories more than a year or two into the future. One possible remedy is to fit a penalized polynomial regression with penalty proportional to the deviation in slopes, i.e., something along the lines of
+One potential concern is the instability of polynomial fits near the endpoints, known as [Runge's phenomenon](https://en.wikipedia.org/wiki/Runge%27s_phenomenon). This produces distortions in the slopes, making it ill-advised to try to extrapolate the trajectories into the future. One possible remedy is to fit a penalized polynomial regression with penalty proportional to the deviation in slopes, i.e., something along the lines of
 $$
 \min_\beta \left\{ \|y - f(x;\beta) \|^2+ \lambda \left[ (f'(2016) - (\hat{X}_{2016} - \hat{X}_{2015}))^2 + (f'(`r baseYear`) - (\hat{X}_{`r baseYear+1`} - \hat{X}_{`r baseYear`}))^2 \right] \right\}
 $$
-where $f(x;\beta) = \text{poly}(x, k) \,\boldsymbol{\beta}$ and $\lambda$ is a tuneable hyperparameter. Of course, this will come at the cost of a lower-quality fit. Based on a visual inspection of the trajectories with and without polynomial smoothing, it looks like none of the distortions are too severe, so I won't bother implementing this.
+where $f(x;\beta) = \text{poly}(x, k) \,\boldsymbol{\beta}$ and $\lambda$ is a tuneable hyperparameter. Of course, this will come at the cost of a lower-quality fit. Based on a visual inspection of the trajectories with and without polynomial smoothing, it looks like none of the distortions are too severe, so I won't bother implementing this. (An even better option would be to fit a spline; I do this in the interactive version.)
 
 That said, now we're ready to plot the data! We can assign a `ggplot` object to a variable for each Census region and pass these objects to `gridExtra::grid.arrange` to organize into a 2-by-2 panel. (Perhaps this could just as well be accomplished with `ggplot2::facet_wrap`.) Note that the use of the `direction` argument in `ggrepel::geom_text_repel` currently requires the development version of the package, which can be installed from GitHub.
 ```{r, fig.width=12, fig.height=15}
@@ -212,7 +208,7 @@ grid.arrange(
 It's nice to be able to see the full population trajectories---for example, we can see that Boston experienced negative growth in the years following 2002 but reversed course to become the Northeast's fastest-growing large city over the past decade. One of the immediate takeaways, however, is that the most impressive growth is concentrated in the South and the West, led by the likes of Raleigh, NC, Forth Worth, TX, Irvine, CA, and Henderson, NV. (I'm reminded of this [article](https://www.washingtonpost.com/realestate/fast-growing-technology-sector-is-fueling-a-housing-boom-in-cities-across-america/2017/01/26/5c72c276-a5d8-11e6-8042-f4d111c862d1_story.html
 ).) By contrast, a number of large cities in the Rust Belt have suffered significant population declines.
 
-Finally, a note of caution regarding interpretation. The choice of `r baseYear` as the base year is arbitrary (I chose it so that the range would be 15 years), so take the ordering of the labels with a grain of salt. Moreover, today's fastest-growing cities are not necessarily those highest on the y-scale, but rather those with the largest slopes at $x = 2016$ (roughly) which, as I've already argued, can be misleading with polynomial smoothing.
+I'll end with a few notes of caution regarding interpretation. The choice of `r baseYear` as the base year is arbitrary (I chose it so that the range would be 15 years), so take the ordering of the labels with a grain of salt. Moreover, today's fastest-growing cities are not necessarily those highest on the y-scale, but rather those with the largest slopes at $x = 2016$ (roughly) which, as I've already argued, can be misleading with polynomial smoothing. Finally, and perhaps most importantly, it's worth paying attention to how city geographies are defined---I've completely glossed over this, but it's not at all obvious how to determine boundaries when measuring population. The "incorporated places" that I've analyzed here frequently do not conform with the colloquial definitions of those places that people are familiar with.
 
 # Addenda
 

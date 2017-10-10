@@ -11,7 +11,7 @@ I made a web application with R/shiny and D3 to illuminate the complex structure
 
 ### "Weekend" Projects
 
-* Interactive visualization of U.S. city populations made with R package `shiny` and the `D3` Javascript library. ([launch](https://sirallen.shinyapps.io/CityTraj/)) ([github](https://github.com/sirallen/population-trajectories)) ([blog post](https://sirallen.name/blog/population-growth-trajectories-cities/))
+* Interactive visualization of U.S. city populations made with R/shiny and the D3 Javascript library. ([launch](https://sirallen.shinyapps.io/CityTraj/)) ([github](https://github.com/sirallen/population-trajectories)) ([blog post](https://sirallen.name/blog/population-growth-trajectories-cities/))
 
 ### Some other things I'm doing
 
