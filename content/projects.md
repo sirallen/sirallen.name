@@ -15,6 +15,6 @@ I made a web application with R/shiny and D3 to illuminate the complex structure
 
 ### Some other things I'm doing
 
-* Plowing through Andrew Ng's [deeplearning.ai](https://www.deeplearning.ai) specialization on Coursera
+* Plowing through Andrew Ng's [deeplearning.ai](https://www.deeplearning.ai) specialization on Coursera.
 
 * Scraping golf tournament data from the web and making some cool charts. Eventually I'd like to experiment with automating the discovery of "interesting" statistics that are used to pepper live commentary. ("If player pulls off shot X, it will be the first time since Y that Z...") Currently there are poor souls who scour vast spreadsheets to find this information.
