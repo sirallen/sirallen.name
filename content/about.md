@@ -2,7 +2,7 @@
 title: "About"
 ---
 
-Welcome to my new blog and personal site! My name is Allen Sirolly. I recently finished a two-year stint at the Federal Reserve (Richmond), where I helped research economists build fancy models and make sense of complex data. I'm currently looking for work as a data scientist while hammering out progress on several personal projects.
+Welcome to my new blog and personal site! My name is Allen Sirolly. I'm a newly minted data scientist at [Wealthfront](https://www.wealthfront.com/), a Silicon Valley company which provides software-based solutions to personal financial planning and investment management. I previously completed a two-year stint at the Federal Reserve (Richmond), where I helped research economists build fancy models and make sense of complex data.
 
 I have a BA in Mathematical Economics from the University of Pennsylvania, with minors in Statistics and Political Science. I'm broadly interested in data science, economics, and U.S. and Chinese current affairs. I try to keep tabs on all of these things and more on a cool website called [Twitter](https://twitter.com/Sirallenrolly), where you can check out the list of people I follow for a fuller picture of my interests.
 
