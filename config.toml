@@ -28,7 +28,7 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
 
 [params]
     # description = "A website built with Hugo and blogdown."
-    footer = "&copy; Allen Sirolly 2017 | [Github](https://github.com/sirallen) | [Twitter](https://twitter.com/Sirallenrolly)"
+    footer = "&copy; Allen Sirolly 2020 | [Github](https://github.com/sirallen) | [Twitter](https://twitter.com/Sirallenrolly)"
     custom_css = ["css/custom.css"]
 
     # options for highlight.js (version, additional languages, and theme)
