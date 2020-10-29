@@ -6,3 +6,4 @@ sirallen.name.Rproj
 .Rprofile
 favicon.png
 .httr-oauth
+*.Rdata

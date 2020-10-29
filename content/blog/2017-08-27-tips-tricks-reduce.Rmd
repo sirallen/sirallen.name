@@ -2,7 +2,9 @@
 title: "Tips and Tricks with Reduce"
 author: "Allen Sirolly"
 date: 2017-08-31
-categories: ["R"]
+slug: tips-tricks-reduce
+categories: []
+tags: []
 ---
 
 ```{r setup, include=FALSE}
