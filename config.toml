@@ -46,3 +46,14 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
     height = 50
     alt = "Logo"
 
+[[redirects]]
+  from = "/blog/arrival-rate-bias-part-1"
+  to = "https://towardsdatascience.com/arrival-rate-bias-ab-testing-1-d291ae9d0cab"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/arrival-rate-bias-part-2"
+  to = "https://medium.com/@sirallenrolly/arrival-rate-bias-ab-testing-2-3930fb7a15cf"
+  status = 301
+  force = true
