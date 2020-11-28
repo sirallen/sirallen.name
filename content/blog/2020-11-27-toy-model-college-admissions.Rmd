@@ -41,7 +41,7 @@ $$
 \max_{C_i \in \mathscr{P}(\mathcal{K})} \Bigg\{ \sum_{\mathcal{S} \in \mathscr{P}(C_i)} P_i(\mathcal{S}) \cdot \max_{k \in \mathcal{S}} u_i(k) - c |C_i| \Bigg\}
 $$
 
-where $P_i(\mathcal{S})$ is the probability that $i$ is admitted to colleges in $\mathcal{S}$ and rejected from colleges in $C_i \setminus \mathcal{S}$. I assume independent admissions decisions by colleges, so that
+where $P_i(\mathcal{S})$ is the probability that $i$ is admitted to colleges in $\mathcal{S}$ and rejected from colleges in $C_i \setminus \mathcal{S}$. Applicants believe that admissions decisions by colleges are independent, so that
 
 $$
 P_i(\mathcal{S}) = \prod_{k \in \mathcal{S}} P(\text{admit at }k \mid W_i) \prod_{k \in C_i\setminus\mathcal{S}} (1 - P(\text{admit at }k \mid W_i)).
