@@ -17,17 +17,17 @@ My goal is to build a model for a multi-period college admissions market which, 
 
 ### Colleges
 
-Suppose there is an ordered set of colleges $\mathcal{K}$ indexed by $k = 1, \dots, K$. Each has capacity $A_k$ for an entering freshman class. Colleges receive reports of $\tilde{W}_i$ (a noisy signal of applicant $i$'s ability/"type" $W_i$) from all applicants and must decide who to admit based on capacity and expected yield. Colleges prefer applicant $i$ to applicant $j$ if $\tilde{W}_i > \tilde{W}_j$.
+Suppose there is an ordered set of colleges $\mathcal{K}$ indexed by $k = 1, \dots, K$. Each has capacity $A_k$ for an entering freshman class. Colleges receive reports of $\widetilde{W}_i$ (a noisy signal of applicant $i$'s ability/"type" $W_i$) from all applicants and must decide who to admit based on capacity and expected yield. Colleges prefer applicant $i$ to applicant $j$ if $\widetilde{W}_i > \widetilde{W}_j$.
 
 To compute the results of an admissions round, I pretend that decisions are made sequentially and publicly, such that college $k$ observes the matches of all higher-ranked colleges ($k' < k$). The admissions process follows a simple algorithm:
 
-* The top-ranked college sorts its applicants by $\tilde{W}_i$ (descending) and admits the top students up to capacity $A_1$;
+* The top-ranked college sorts its applicants by $\widetilde{W}_i$ (descending) and admits the top students up to capacity $A_1$;
 
-* The second-ranked college sorts its applicants by $\tilde{W}_i$ and admits all who were admitted by the first-ranked college, plus the top students who were not admitted by the first-ranked college, up to capacity $A_2$;
+* The second-ranked college sorts its applicants by $\widetilde{W}_i$ and admits all who were admitted by the first-ranked college, plus the top students who were not admitted by the first-ranked college, up to capacity $A_2$;
 
 * And so on for $k = 3, \dots, K$.
 
-The embedded assumptions are that (a) colleges do not have minimum requirements for $\tilde{W}_i$; (b) colleges will not reject applicants for being "overqualified"^[A richer model might incorporate incentives for colleges to keep their admission rates low.] (in the sense of having a $\tilde{W}_i$ higher than another admit); and (c) applicants have utility functions over $\mathcal{K}$ such that $u_i(k') > u_i(k)$ for $k' < k$, for all $i$.
+The embedded assumptions are that (a) colleges do not have minimum requirements for $\widetilde{W}_i$; (b) colleges will not reject applicants for being "overqualified"^[A richer model might incorporate incentives for colleges to keep their admission rates low.] (in the sense of having a $\widetilde{W}_i$ higher than another admit); and (c) applicants have utility functions over $\mathcal{K}$ such that $u_i(k') > u_i(k)$ for $k' < k$, for all $i$.
 
 ### Applicants
 
@@ -63,25 +63,25 @@ The corresponding probabilities are easy to compute by the independent admission
 
 #### Beliefs
 
-Suppose that types are distributed $W \sim G(w)$. Each applicant knows her own type as well as the distribution $G$, and sends colleges a noisy signal $\tilde{W}_i = W_i + \epsilon_i$, $\epsilon_i \sim F(\epsilon)$, where $F$ is known but the realization of $\epsilon_i$ is unknown. I assume that prior beliefs are consistent with a view of the admissions process as a perfect sorting mechanism, such that the $\sum_{j<k} A_j$ applicants with the highest $\tilde{W}_i$'s will be admitted to the $k$ highest-ranked colleges. (This actually agrees with the outcome of the colleges' decision process if every prospect sends an application to every college.)
+Suppose that types are distributed $W \sim G(w)$. Each applicant knows her own type as well as the distribution $G$, and sends colleges a noisy signal $\widetilde{W}_i = W_i + \epsilon_i$, $\epsilon_i \sim F(\epsilon)$, where $F$ is known but the realization of $\epsilon_i$ is unknown. I assume that prior beliefs are consistent with a view of the admissions process as a perfect sorting mechanism, such that the $\sum_{j<k} A_j$ applicants with the highest $\widetilde{W}_i$'s will be admitted to the $k$ highest-ranked colleges. (This actually agrees with the outcome of the colleges' decision process if every prospect sends an application to every college.)
 
-Let $\tilde{G}$ be the marginal distribution of $\tilde{W}_i$ (which applicants can calculate using knowledge of $F$ and $G$). After observing public information $I_k$, e.g., last year's admission rate at college $k$, the posterior beliefs are
+Let $\widetilde{G}$ be the marginal distribution of $\widetilde{W}_i$ (which applicants can calculate using knowledge of $F$ and $G$). After observing public information $I_k$, e.g., last year's admission rate at college $k$, the posterior beliefs are
 
 $$
-P_\alpha(\text{admit at }k \mid W_i) = (1 - \alpha) P\left( \tilde{G}^{-1}(\tilde{W}_i) > \frac{\sum_{j<k}A_j}{\sum_j A_j} \right) + \alpha I_k
+P_\alpha(\text{admit at }k \mid W_i) = (1 - \alpha) P\left( \widetilde{G}^{-1}(\widetilde{W}_i) > \frac{\sum_{j<k}A_j}{\sum_j A_j} \right) + \alpha I_k
 $$
 
 where $\alpha \in [0, 1]$ represents the degree of shrinkage.
 
 ## Simulation
 
-The features of this model can be studied via a simulation exercise, in the spirit of the agent-based modeling approach.^[I've made the code available [here](https://github.com/sirallen/college-admissions-toy-model).] One challenging problem is to figure out the beliefs and utility functions which result in application behavior that is at least somewhat consistent with public information about the previous year's admission rates (which I won't attempt in this post).
+The features of this model can be studied via a simulation exercise, in the spirit of agent-based modeling.^[I've made the code available [here](https://github.com/sirallen/college-admissions-toy-model).] One challenging problem is to figure out the beliefs and utility functions which result in application behavior that is at least somewhat consistent with public information about the previous year's admission rates (which I won't attempt in this post).
 
 For the simulation I construct a set of $K = 50$ colleges, each with capacity $A_k = 100$. There are $\sum_k A_k = 5000$ prospective applicants with
 
 $$
 W_i \sim \mathcal{N}(0, 1^2) \\
-\tilde{W}_i \mid W_i \sim \mathcal{N}(W_i, 0.1^2)
+\widetilde{W}_i \mid W_i \sim \mathcal{N}(W_i, 0.1^2)
 $$
 
 The public admission rates are
