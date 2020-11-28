@@ -63,12 +63,12 @@ The corresponding probabilities are easy to compute by the independent admission
 
 #### Beliefs
 
-Suppose that types are distributed $W \sim G(w)$. Each applicant knows her own type as well as the distribution $G$, and sends colleges a noisy signal $\widetilde{W}_i = W_i + \epsilon_i$, $\epsilon_i \sim F(\epsilon)$, where $F$ is known but the realization of $\epsilon_i$ is unknown. I assume that prior beliefs are consistent with a view of the admissions process as a perfect sorting mechanism, such that the $\sum_{j<k} A_j$ applicants with the highest $\widetilde{W}_i$'s will be admitted to the $k$ highest-ranked colleges. (This actually agrees with the outcome of the colleges' decision process if every prospect sends an application to every college.)
+Suppose that types are distributed $W \sim G(w)$. Each applicant knows her own type as well as the distribution $G$, and sends colleges a noisy signal $\widetilde{W}_i = W_i + \epsilon_i$, $\epsilon_i \sim F(\epsilon)$, where $F$ is known but the realization of $\epsilon_i$ is unknown. I assume that prior beliefs are consistent with a view of the admissions process as a perfect sorting mechanism, such that the $\sum_{j\leq k} A_j$ applicants with the highest $\widetilde{W}_i$'s will be admitted to the $k$ highest-ranked colleges. (This actually agrees with the outcome of the colleges' decision process if every prospect sends an application to every college.)
 
 Let $\widetilde{G}$ be the marginal distribution of $\widetilde{W}_i$ (which applicants can calculate using knowledge of $F$ and $G$). After observing public information $I_k$, e.g., last year's admission rate at college $k$, the posterior beliefs are
 
 $$
-P_\alpha(\text{admit at }k \mid W_i) = (1 - \alpha) P\left( \widetilde{G}^{-1}(\widetilde{W}_i) > \frac{\sum_{j<k}A_j}{\sum_j A_j} \right) + \alpha I_k
+P_\alpha(\text{admit at }k \mid W_i) = (1 - \alpha) P\left( 1 - \widetilde{G}(\widetilde{W}_i) < \frac{\sum_{j\leq k}A_j}{\sum_j A_j} \right) + \alpha I_k
 $$
 
 where $\alpha \in [0, 1]$ represents the degree of shrinkage.
