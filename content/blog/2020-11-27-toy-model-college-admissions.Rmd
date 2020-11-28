@@ -1,25 +1,29 @@
 ---
 title: "A Toy Model of College Admissions"
 author: "Allen Sirolly"
-date: '2020-11-27'
+date: 2020-11-27
 slug: toy-model-college-admissions
 tags: []
 categories: []
 ---
 
-My goal is to write down a model for a multi-period two-sided college admissions market which, through some mechanism, gives rise to a vicious cycle of increasing application volume and lower admission rates, a phenomenon suggested by the bottom chart [here](https://www.pewresearch.org/fact-tank/2019/04/09/a-majority-of-u-s-colleges-admit-most-students-who-apply/). The idea is that applicants shrink their beliefs about chances of admission toward a public signal (such as last year's admission rate) so that underqualified (overqualified) applicants are overconfident (underconfident). I plan to analyze an intervention which gives applicants information about conditional acceptance rates at each college, rather than just the unconditional rates which are typically reported.
+The chart below from a 2019 [Pew Research article](https://www.pewresearch.org/fact-tank/2019/04/09/a-majority-of-u-s-colleges-admit-most-students-who-apply/) caught my attention the other day. It shows a concerning trend of increasing selectivity at colleges which has been written about in plenty of [other](https://www.businessinsider.com/how-hard-to-get-into-harvard-stanford-2017-4) [places](https://www.nytimes.com/2019/03/29/us/college-admissions-rates.html) as well.^[I [tweeted](https://twitter.com/Sirallenrolly/status/1313548240466268160?s=20) about it, too!] While this doesn't necessarily make it "harder" to get into these competitive schools (it could just be that more low-quality types are applying), a rise in the average number of applications per applicant can certainly bring with it a concomitant increase in anxiety for successive waves of prospects.
+
+<center><img src="https://www.dropbox.com/s/8vceqrbmyos5ny7/FT_19.04.01_CollegeAdmissions_3.png?raw=1" width="700px"></center>
+
+My goal is to build a model for a multi-period college admissions market which, through some mechanism, gives rise to a vicious cycle of increasing application volume and lower admission rates. This is a big task which I don't expect to fully accomplish here; instead, I'll use this post to sketch out a simple "toy model" which might serve as a starting point. The main idea is that applicants shrink their beliefs about their chances of admission toward a public signal, such as last year's admission rates, in such a way that the resulting admission rates will be slightly lower _this year_. I'll start by considering a one-period model where applicants solve a utility maximization problem.
 
 ## The Model
 
 ### Colleges
 
-Suppose there is a set of colleges $\mathcal{K}$ indexed by $k = 1, \dots, K$. Each has capacity $A_k$ for an entering freshman class. Colleges receive reports of $\tilde{W}_i$ (a noisy signal of applicant $i$'s ability/"type" $W_i$) from all applicants and must decide who to admit based on capacity and expected yield. Colleges prefer applicant $i$ to applicant $j$ if $\tilde{W}_i > \tilde{W}_j$.
+Suppose there is an ordered set of colleges $\mathcal{K}$ indexed by $k = 1, \dots, K$. Each has capacity $A_k$ for an entering freshman class. Colleges receive reports of $\tilde{W}_i$ (a noisy signal of applicant $i$'s ability/"type" $W_i$) from all applicants and must decide who to admit based on capacity and expected yield. Colleges prefer applicant $i$ to applicant $j$ if $\tilde{W}_i > \tilde{W}_j$.
 
-For simplicity I assume that admissions decisions are made sequentially, such that college $k$ observes the matches of all higher-ranked colleges ($k' < k$). The admissions decision follows a simple rule:
+To compute the results of an admissions round, I pretend that decisions are made sequentially and publicly, such that college $k$ observes the matches of all higher-ranked colleges ($k' < k$). The admissions process follows a simple algorithm:
 
-* The top-ranked college sorts applicants by $\tilde{W}_i$ (descending) and admits the top students up to capacity $A_1$;
+* The top-ranked college sorts its applicants by $\tilde{W}_i$ (descending) and admits the top students up to capacity $A_1$;
 
-* The second-ranked college sorts applicants by $\tilde{W}_i$ and admits all students admitted by the first-ranked college, plus the top students who were not admitted by the first-ranked college, up to capacity $A_2$;
+* The second-ranked college sorts its applicants by $\tilde{W}_i$ and admits all who were admitted by the first-ranked college, plus the top students who were not admitted by the first-ranked college, up to capacity $A_2$;
 
 * And so on for $k = 3, \dots, K$.
 
@@ -29,7 +33,7 @@ The embedded assumptions are that (a) colleges do not have minimum requirements 
 
 #### The choice problem
 
-Each applicant $i$ has utility function $u_i(k)$ over $\mathcal{K}$ and faces a constant application cost $c$. Each has an ability ("type") $W_i$ and beliefs---shaped by priors and public information---about the probability of acceptance to college $k$ given their noisy signal $\tilde{W}_i$. The problem the applicant faces is to choose a set of colleges $C_i$ to which to apply; from the subset of admittances, the applicant will choose the college which maximizes utility. Assume that the utility of not being admitted to any college is normalized to 0, with $u_i(k) > 0$ for all $k$.
+Each applicant $i$ has utility function $u_i(k)$ over $\mathcal{K}$ and faces a constant application cost $c$. Each has an ability ("type") $W_i$ and beliefs---shaped by priors and public information---about the probability of acceptance to college $k$ given $W_i$. The problem the applicant faces is to choose a set of colleges $C_i$ to which to apply; from the subset of admittances, the applicant will choose the college which maximizes utility. Assume that the utility of not being admitted to any college is normalized to 0, with $u_i(k) > 0$ for all $k$.
 
 Let $\mathscr{P}(S)$ denote the power set of $S$, so that $C_i \in \mathscr{P}(\mathcal{K})$ are the possible application/choice sets^[In practice, applicants will face an application limit $L$ so that the choice set is $C_i \in \{ \mathcal{C} \in \mathscr{P}(\mathcal{K}) : |\mathcal{C}| < L \}$. The Common App presently limits students to 20 applications.] and $\mathcal{S} \in \mathscr{P}(C_i)$ are the possible sets of colleges to which the applicant is admitted. Formally, an applicant will solve
 
@@ -37,7 +41,7 @@ $$
 \max_{C_i \in \mathscr{P}(\mathcal{K})} \Bigg\{ \sum_{\mathcal{S} \in \mathscr{P}(C_i)} P_i(\mathcal{S}) \cdot \max_{k \in \mathcal{S}} u_i(k) - c |C_i| \Bigg\}
 $$
 
-where $P_i(\mathcal{S})$ is the probability that $i$ is admitted to colleges in $\mathcal{S}$. I assume independent admissions decisions by colleges, so that
+where $P_i(\mathcal{S})$ is the probability that $i$ is admitted to colleges in $\mathcal{S}$ and rejected from colleges in $C_i \setminus \mathcal{S}$. I assume independent admissions decisions by colleges, so that
 
 $$
 P_i(\mathcal{S}) = \prod_{k \in \mathcal{S}} P(\text{admit at }k \mid W_i) \prod_{k \in C_i\setminus\mathcal{S}} (1 - P(\text{admit at }k \mid W_i)).
@@ -59,7 +63,7 @@ The corresponding probabilities are easy to compute by the independent admission
 
 #### Beliefs
 
-Suppose that types are distributed $W \sim G(w)$. Each applicant knows her own type as well as the distribution $G$, and sends colleges a noisy signal $\tilde{W}_i = W_i + \epsilon_i$, $\epsilon_i \sim F(\epsilon)$, where $F$ is known but the realization of $\epsilon_i$ is unknown. I assume that prior beliefs are consistent with a view of the admissions process as a perfect sorting mechanism, such that the $\sum_{j<k} A_j$ applicants with the highest $\tilde{W}_i$'s will be admitted to the $k$ highest-ranked colleges. (This actually agrees with the outcome of the colleges' decision process in section \ref{colleges} if every prospect sends an application to every college.)
+Suppose that types are distributed $W \sim G(w)$. Each applicant knows her own type as well as the distribution $G$, and sends colleges a noisy signal $\tilde{W}_i = W_i + \epsilon_i$, $\epsilon_i \sim F(\epsilon)$, where $F$ is known but the realization of $\epsilon_i$ is unknown. I assume that prior beliefs are consistent with a view of the admissions process as a perfect sorting mechanism, such that the $\sum_{j<k} A_j$ applicants with the highest $\tilde{W}_i$'s will be admitted to the $k$ highest-ranked colleges. (This actually agrees with the outcome of the colleges' decision process if every prospect sends an application to every college.)
 
 Let $\tilde{G}$ be the marginal distribution of $\tilde{W}_i$ (which applicants can calculate using knowledge of $F$ and $G$). After observing public information $I_k$, e.g., last year's admission rate at college $k$, the posterior beliefs are
 
@@ -71,7 +75,7 @@ where $\alpha \in [0, 1]$ represents the degree of shrinkage.
 
 ## Simulation
 
-The features of this model can be studied via a simulation exercise.^[I've made the code available [here](https://github.com/sirallen/college-admissions-toy-model).] One challenging problem is to figure out the beliefs and utility functions which result in application behavior that is at least somewhat consistent with public information about the previous year's admission rates.
+The features of this model can be studied via a simulation exercise, in the spirit of the agent-based modeling approach.^[I've made the code available [here](https://github.com/sirallen/college-admissions-toy-model).] One challenging problem is to figure out the beliefs and utility functions which result in application behavior that is at least somewhat consistent with public information about the previous year's admission rates (which I won't attempt in this post).
 
 For the simulation I construct a set of $K = 50$ colleges, each with capacity $A_k = 100$. There are $\sum_k A_k = 5000$ prospective applicants with
 
@@ -94,6 +98,8 @@ $$
 
 for $\beta > 0$ and $\gamma > 0$.  The latter parameter guarantees that there is a minimum increment in the utility function between consecutively-ranked colleges. I normalize the utilities so that $\sum_k u_i(k)\cdot I_k = 1000$.
 
+I computed the "results" of this artificial admissions process for a grid of parameter values, which led to some interesting charts:
+
 <center><img src="https://www.dropbox.com/s/uqxch3p2cti73wq/UtilityFunctions.png?raw=1" width="700px"></center>
 <center>Set of utility functions considered.</center>
 
@@ -114,3 +120,5 @@ for $\beta > 0$ and $\gamma > 0$.  The latter parameter guarantees that there is
 
 <center><img src="https://www.dropbox.com/s/ncpw3go3bf27ev8/NumAdmitsByCollegeRankAndTypePercentile_gamma%3D3_beta%3D1.50.png?raw=1" width="700px"></center>
 <center>Number of admittances to each college, by applicant ability/type percentile, for $\gamma = 3$, $\beta = 1.5$, and different values of $(\alpha, c)$.</center>
+
+That's it for now! More to come in a future post...
