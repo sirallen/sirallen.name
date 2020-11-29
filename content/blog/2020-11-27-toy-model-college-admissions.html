@@ -1,7 +1,7 @@
 ---
 title: "A Toy Model of College Admissions"
 author: "Allen Sirolly"
-date: 2020-11-27
+date: '2020-11-27'
 slug: toy-model-college-admissions
 tags: []
 categories: []
@@ -52,7 +52,7 @@ P(\text{admit at }k&#39; \mid W_i) \left[ P_i(\varnothing) u_i(k&#39;) + \sum_{k
 </div>
 <div id="beliefs" class="section level4">
 <h4>Beliefs</h4>
-<p>Suppose that types are distributed <span class="math inline">\(W \sim G(w)\)</span>. Each applicant knows her own type as well as the distribution <span class="math inline">\(G\)</span>, and sends colleges a noisy signal <span class="math inline">\(\widetilde{W}_i = W_i + \epsilon_i\)</span>, <span class="math inline">\(\epsilon_i \sim F(\epsilon)\)</span>, where <span class="math inline">\(F\)</span> is known but the realization of <span class="math inline">\(\epsilon_i\)</span> is unknown. I assume that prior beliefs are consistent with a view of the admissions process as a perfect sorting mechanism, such that the <span class="math inline">\(\sum_{j\leq k} A_j\)</span> applicants with the highest <span class="math inline">\(\widetilde{W}_i\)</span>’s will be admitted to the <span class="math inline">\(k\)</span> highest-ranked colleges. (This actually agrees with the outcome of the colleges’ decision process if every prospect sends an application to every college.)</p>
+<p>Suppose that types are distributed <span class="math inline">\(W \sim G(w)\)</span>. Each applicant knows her own type as well as the distribution <span class="math inline">\(G\)</span>, and sends colleges a noisy signal <span class="math inline">\(\widetilde{W}_i = W_i + \epsilon_i\)</span>, <span class="math inline">\(\epsilon_i \sim F(\epsilon)\)</span>, where <span class="math inline">\(F\)</span> is known but the realization of <span class="math inline">\(\epsilon_i\)</span> is unknown. I assume that prior beliefs are consistent with a view of the admissions process as a perfect sorting mechanism, such that the <span class="math inline">\(\sum_{j\leq k} A_j\)</span> applicants with the highest <span class="math inline">\(\widetilde{W}_i\)</span>’s will be admitted to the <span class="math inline">\(k\)</span> highest-ranked colleges. (This actually agrees with the outcome of the colleges’ decision process if every prospect sends an application to every college, which is what happens when <span class="math inline">\(c = 0\)</span>.)</p>
 <p>Let <span class="math inline">\(\widetilde{G}\)</span> be the marginal distribution of <span class="math inline">\(\widetilde{W}_i\)</span> (which applicants can calculate using knowledge of <span class="math inline">\(F\)</span> and <span class="math inline">\(G\)</span>). After observing public information <span class="math inline">\(I_k\)</span>, e.g., last year’s admission rate at college <span class="math inline">\(k\)</span>, the posterior beliefs are</p>
 <p><span class="math display">\[
 P_\alpha(\text{admit at }k \mid W_i) = (1 - \alpha) P\left( 1 - \widetilde{G}(\widetilde{W}_i) &lt; \frac{\sum_{j\leq k}A_j}{\sum_j A_j} \right) + \alpha I_k
@@ -121,6 +121,7 @@ Total number of applications to each college, by applicant ability/type percenti
 <center>
 Number of admittances to each college, by applicant ability/type percentile, for <span class="math inline">\(\gamma = 3\)</span>, <span class="math inline">\(\beta = 1.5\)</span>, and different values of <span class="math inline">\((\alpha, c)\)</span>.
 </center>
+<p>Of these, the one that catches my attention is the <span class="math inline">\((\beta = 2, \gamma = 3, c = 1)\)</span> case, where the admission rates are at least increasing with <span class="math inline">\(k\)</span>. For <span class="math inline">\(\alpha \in \{0.1, 0.2\}\)</span>, low-type applicants send lots of applications to colleges on the more selective end of the spectrum, driving admission rates down. (Note that there is a sizable “gap” in the choice sets for these types, in that prospects apply to colleges <span class="math inline">\(j &lt; k\)</span> and <span class="math inline">\(j &gt; k\)</span> but not to <span class="math inline">\(k\)</span>; likewise the set of types from which colleges receive applications is disconnected.) I expect that in reality it is the high-type applicants who are sending the most applications (on a per-applicant basis), so this is strange. The other results are even more weird so I’m not going to comment further. The next step is to figure out how to better structure the model and environment such that there can be “equilibrium”, in that the admission rates match the previous period’s admission rates reported as <span class="math inline">\(I_k\)</span>. While the simulations are fun, this is going to require more math…</p>
 <p>That’s it for now! More to come in a future post…</p>
 </div>
 <div class="footnotes">

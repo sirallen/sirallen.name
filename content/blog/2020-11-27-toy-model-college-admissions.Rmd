@@ -1,13 +1,13 @@
 ---
 title: "A Toy Model of College Admissions"
 author: "Allen Sirolly"
-date: 2020-11-27
+date: '2020-11-27'
 slug: toy-model-college-admissions
 tags: []
 categories: []
 ---
 
-The chart below from a 2019 [Pew Research article](https://www.pewresearch.org/fact-tank/2019/04/09/a-majority-of-u-s-colleges-admit-most-students-who-apply/) caught my attention the other day. It shows a concerning trend of increasing selectivity at colleges which has been written about in plenty of [other](https://www.businessinsider.com/how-hard-to-get-into-harvard-stanford-2017-4) [places](https://www.nytimes.com/2019/03/29/us/college-admissions-rates.html) as well.^[I [tweeted](https://twitter.com/Sirallenrolly/status/1313548240466268160?s=20) about it, too!] While this doesn't necessarily make it "harder" to get into these competitive schools (it could just be that more low-quality types are applying), a rise in the average number of applications per applicant can certainly bring with it a concomitant increase in anxiety for successive waves of prospects.
+The chart below from a 2019 [Pew Research article](https://www.pewresearch.org/fact-tank/2019/04/09/a-majority-of-u-s-colleges-admit-most-students-who-apply/) caught my attention the other day. It shows a concerning trend of increasing selectivity at colleges which has been written about in plenty of [other](https://www.businessinsider.com/how-hard-to-get-into-harvard-stanford-2017-4) [places](https://www.nytimes.com/2019/03/29/us/college-admissions-rates.html) as well.^[I [tweeted](https://twitter.com/Sirallenrolly/status/1313548240466268160?s=20) about it, too!] While this doesn't necessarily make it "harder" to get into these competitive schools (it could just be that more students who would have been non-competitive in previous years are applying), a rise in the average number of applications per applicant can certainly bring with it a concomitant increase in anxiety for successive waves of prospects.
 
 <center><img src="https://www.dropbox.com/s/8vceqrbmyos5ny7/FT_19.04.01_CollegeAdmissions_3.png?raw=1" width="700px"></center>
 
@@ -17,17 +17,17 @@ My goal is to build a model for a multi-period college admissions market which, 
 
 ### Colleges
 
-Suppose there is an ordered set of colleges $\mathcal{K}$ indexed by $k = 1, \dots, K$. Each has capacity $A_k$ for an entering freshman class. Colleges receive reports of $\widetilde{W}_i$ (a noisy signal of applicant $i$'s ability/"type" $W_i$) from all applicants and must decide whom to admit based on capacity and expected yield. Colleges prefer applicant $i$ to applicant $j$ if $\widetilde{W}_i > \widetilde{W}_j$.
+Suppose there is an ordered set of colleges $\mathcal{K}$ indexed by $k = 1, \dots, K$. Each has capacity $A_k$ for an entering freshman class. Colleges receive reports of $\widetilde{W}_i$ (a noisy signal of applicant $i$'s ability/"type" $W_i$) from all applicants and must decide whom to admit based on capacity and expected yield. Colleges prefer applicant $i$ to applicant $j$ if $\widetilde{W}_i > \widetilde{W}_j$, and applicants prefer college $k$ to $k'$ if $k < k'$.
 
 To compute the results of an admissions round, I pretend that decisions are made sequentially and publicly, such that college $k$ observes the matches of all higher-ranked colleges ($k' < k$). The admissions process follows a simple algorithm:
 
-* The top-ranked college sorts its applicants by $\widetilde{W}_i$ (descending) and admits the top students up to capacity $A_1$;
+* The top-ranked college sorts its applicants by $\widetilde{W}_i$ (descending) and admits the top students up to capacity $A_1$ (all of whom match with it, for a 100% yield);
 
 * The second-ranked college sorts its applicants by $\widetilde{W}_i$ and admits all who were admitted by the first-ranked college, plus the top students who were not admitted by the first-ranked college, up to capacity $A_2$;
 
 * And so on for $k = 3, \dots, K$.
 
-The embedded assumptions are that (a) colleges do not have minimum requirements for $\widetilde{W}_i$; (b) colleges will not reject applicants for being "overqualified"^[A richer model might incorporate incentives for colleges to keep their admission rates low.] (in the sense of having a $\widetilde{W}_i$ higher than another admit); and (c) applicants have utility functions over $\mathcal{K}$ such that $u_i(k') > u_i(k)$ for $k' < k$, for all $i$.
+The embedded assumptions are that (a) colleges do not have minimum requirements for $\widetilde{W}_i$; (b) colleges will not reject applicants for being "overqualified"^[A richer model might incorporate incentives for colleges to keep their admission rates low.] (in the sense of having a $\widetilde{W}_i$ higher than another admit).
 
 ### Applicants
 
@@ -63,7 +63,7 @@ The corresponding probabilities are easy to compute by the independent admission
 
 #### Beliefs
 
-Suppose that types are distributed $W \sim G(w)$. Each applicant knows her own type as well as the distribution $G$, and sends colleges a noisy signal $\widetilde{W}_i = W_i + \epsilon_i$, $\epsilon_i \sim F(\epsilon)$, where $F$ is known but the realization of $\epsilon_i$ is unknown. I assume that prior beliefs are consistent with a view of the admissions process as a perfect sorting mechanism, such that the $\sum_{j\leq k} A_j$ applicants with the highest $\widetilde{W}_i$'s will be admitted to the $k$ highest-ranked colleges. (This actually agrees with the outcome of the colleges' decision process if every prospect sends an application to every college.)
+Suppose that types are distributed $W \sim G(w)$. Each applicant knows her own type as well as the distribution $G$, and sends colleges a noisy signal $\widetilde{W}_i = W_i + \epsilon_i$, $\epsilon_i \sim F(\epsilon)$, where $F$ is known but the realization of $\epsilon_i$ is unknown. I assume that prior beliefs are consistent with a view of the admissions process as a perfect sorting mechanism, such that the $\sum_{j\leq k} A_j$ applicants with the highest $\widetilde{W}_i$'s will be admitted to the $k$ highest-ranked colleges. (This actually agrees with the outcome of the colleges' decision process if every prospect sends an application to every college, which is what happens when $c = 0$.)
 
 Let $\widetilde{G}$ be the marginal distribution of $\widetilde{W}_i$ (which applicants can calculate using knowledge of $F$ and $G$). After observing public information $I_k$, e.g., last year's admission rate at college $k$, the posterior beliefs are
 
@@ -75,7 +75,9 @@ where $\alpha \in [0, 1]$ represents the degree of shrinkage.
 
 ## Simulation
 
-The features of this model can be studied via a simulation exercise, in the spirit of agent-based modeling.^[I've made the code available [here](https://github.com/sirallen/college-admissions-toy-model).] One challenging problem is to figure out the beliefs and utility functions which result in application behavior that is at least somewhat consistent with public information about the previous year's admission rates (which I won't attempt in this post).
+The features of this model can be studied via a simulation exercise, in the spirit of agent-based modeling. One challenging problem (which I won't attempt in this post) is to figure out the beliefs and utility functions which result in an admissions outcome that is consistent with $\{I_k\}$, in an equilibrium sense.
+
+I've made the code available on my [GitHub](https://github.com/sirallen/college-admissions-toy-model).
 
 For the simulation I construct a set of $K = 50$ colleges, each with capacity $A_k = 100$. There are $\sum_k A_k = 5000$ prospective applicants with
 
@@ -84,13 +86,13 @@ W_i \sim \mathcal{N}(0, 1^2) \\
 \widetilde{W}_i \mid W_i \sim \mathcal{N}(W_i, 0.1^2)
 $$
 
-The public admission rates are
+so that $\widetilde{W}_i \sim \mathcal{N}(0, 1.1^2)$. The public admission rates are
 
 $$
 I_k = \left( 1 - \frac{k-1}{K-1} \right) \underline{r} + \frac{k-1}{K-1}\;\overline{r}
 $$
 
-with $(\underline{r}, \overline{r}) = (.05, .8)$, and the utility function (common to all applicants) has the form
+with $(\underline{r}, \overline{r}) = (.05, 1)$, and the utility function (common to all applicants) has the form
 
 $$
 u_i(k) = I_k^{-\beta} + \gamma (K - k)
@@ -100,25 +102,30 @@ for $\beta > 0$ and $\gamma > 0$.  The latter parameter guarantees that there is
 
 I computed the "results" of this artificial admissions process for a grid of parameter values, which led to some interesting charts:
 
-<center><img src="https://www.dropbox.com/s/uqxch3p2cti73wq/UtilityFunctions.png?raw=1" width="700px"></center>
+<center><img src="https://www.dropbox.com/s/h9s1ji63ybawejb/UtilityFunctions.png?raw=1" width="700px"></center>
 <center>Set of utility functions considered.</center>
 
-<center><img src="https://www.dropbox.com/s/ho4srgvu99mcgjb/ProbAcceptanceBeliefsByType.png?raw=1" width="700px"></center>
+<center><img src="https://www.dropbox.com/s/111q48ykx8tiyaq/ProbAcceptanceBeliefsByType.png?raw=1" width="700px"></center>
 <center>Applicants' beliefs about probability of acceptance at each college, for different values of $(W_i, \alpha)$. Dashed line is the public information $I_k$.</center>
 
-<center><img src="https://www.dropbox.com/s/stktot3usw0n6lp/ApplicationVolumeByCollegeRank_gamma%3D3.png?raw=1" width="700px"></center>
+<center><img src="https://www.dropbox.com/s/yh1fdsu0xctecw9/ApplicationVolumeByCollegeRank_gamma%3D3.png?raw=1" width="700px"></center>
 <center>Application volume by college rank for $\gamma = 3$ and different values of $(\alpha, \beta, c)$.</center>
 
-<center><img src="https://www.dropbox.com/s/uknfqb29lriyua2/AdmitAndYieldRatesByCollegeRank_gamma%3D3.png?raw=1" width="700px"></center>
+<center><img src="https://www.dropbox.com/s/u7p1ay8wa9jfft1/AdmitRatesByCollegeRank_gamma%3D3.png?raw=1" width="700px"></center>
 <center>Acceptance rates for $\gamma = 3$ and different values of $(\alpha, \beta, c)$. Dotted line is $I_k$.</center>
 
-<center><img src="https://www.dropbox.com/s/fzev7l6kuefxrzw/AvgNumApplicationsPerStudentByTypePercentile_gamma%3D3.png?raw=1" width="700px"></center>
+<center><img src="https://www.dropbox.com/s/hqzry7wm9tt9o7d/YieldsByCollegeRank_gamma%3D3.png?raw=1" width="700px"></center>
+<center>Yields for $\gamma = 3$ and different values of $(\alpha, \beta, c)$. Dotted line is $I_k$.</center>
+
+<center><img src="https://www.dropbox.com/s/324jmw30v49ootx/AvgNumApplicationsPerStudentByTypePercentile_gamma%3D3.png?raw=1" width="700px"></center>
 <center>Average number of applications per applicant by ability/type percentile, for $\gamma = 3$ and different values of $(\alpha, \beta, c)$.</center>
 
-<center><img src="https://www.dropbox.com/s/lwqeq37nk5r8x3x/NumApplicationsByCollegeRankAndTypePercentile_gamma%3D3_beta%3D1.50.png?raw=1" width="700px"></center>
+<center><img src="https://www.dropbox.com/s/85pnpg8yu5tegqp/NumApplicationsByCollegeRankAndTypePercentile_gamma%3D3_beta%3D1.50.png?raw=1" width="700px"></center>
 <center>Total number of applications to each college, by applicant ability/type percentile, for $\gamma = 3$, $\beta = 1.5$, and different values of $(\alpha, c)$.</center>
 
-<center><img src="https://www.dropbox.com/s/ncpw3go3bf27ev8/NumAdmitsByCollegeRankAndTypePercentile_gamma%3D3_beta%3D1.50.png?raw=1" width="700px"></center>
+<center><img src="https://www.dropbox.com/s/4d5pfopmkwhpnkg/NumAdmitsByCollegeRankAndTypePercentile_gamma%3D3_beta%3D1.50.png?raw=1" width="700px"></center>
 <center>Number of admittances to each college, by applicant ability/type percentile, for $\gamma = 3$, $\beta = 1.5$, and different values of $(\alpha, c)$.</center>
+
+<!-- Of these, the one that catches my attention is the $(\beta = 2, \gamma = 3, c = 1)$ case, where the admission rates are at least increasing with $k$. For $\alpha \in \{0.1, 0.2\}$, low-type applicants send lots of applications to colleges on the more selective end of the spectrum, driving admission rates down. (Note that there is a sizable "gap" in the choice sets for these types, in that prospects apply to colleges $j < k$ and $j > k$ but not to $k$; likewise the set of types from which colleges receive applications is disconnected.) I expect that in reality it is the high-type applicants who are sending the most applications (on a per-applicant basis), so this is strange. The other results are even more weird so I'm not going to comment further... -->
 
 That's it for now! More to come in a future post...
