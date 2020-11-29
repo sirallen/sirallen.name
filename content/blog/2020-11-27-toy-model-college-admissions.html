@@ -9,7 +9,7 @@ categories: []
 
 
 
-<p>The chart below from a 2019 <a href="https://www.pewresearch.org/fact-tank/2019/04/09/a-majority-of-u-s-colleges-admit-most-students-who-apply/">Pew Research article</a> caught my attention the other day. It shows a concerning trend of increasing selectivity at colleges which has been written about in plenty of <a href="https://www.businessinsider.com/how-hard-to-get-into-harvard-stanford-2017-4">other</a> <a href="https://www.nytimes.com/2019/03/29/us/college-admissions-rates.html">places</a> as well.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> While this doesn’t necessarily make it “harder” to get into these competitive schools (it could just be that more low-quality types are applying), a rise in the average number of applications per applicant can certainly bring with it a concomitant increase in anxiety for successive waves of prospects.</p>
+<p>The chart below from a 2019 <a href="https://www.pewresearch.org/fact-tank/2019/04/09/a-majority-of-u-s-colleges-admit-most-students-who-apply/">Pew Research article</a> caught my attention the other day. It shows a concerning trend of increasing selectivity at colleges which has been written about in plenty of <a href="https://www.businessinsider.com/how-hard-to-get-into-harvard-stanford-2017-4">other</a> <a href="https://www.nytimes.com/2019/03/29/us/college-admissions-rates.html">places</a> as well.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> While this doesn’t necessarily make it “harder” to get into these competitive schools (it could just be that more students who would have been non-competitive in previous years are applying), a rise in the average number of applications per applicant can certainly bring with it a concomitant increase in anxiety for successive waves of prospects.</p>
 <center>
 <img src="https://www.dropbox.com/s/8vceqrbmyos5ny7/FT_19.04.01_CollegeAdmissions_3.png?raw=1" width="700px">
 </center>
@@ -18,14 +18,14 @@ categories: []
 <h2>The Model</h2>
 <div id="colleges" class="section level3">
 <h3>Colleges</h3>
-<p>Suppose there is an ordered set of colleges <span class="math inline">\(\mathcal{K}\)</span> indexed by <span class="math inline">\(k = 1, \dots, K\)</span>. Each has capacity <span class="math inline">\(A_k\)</span> for an entering freshman class. Colleges receive reports of <span class="math inline">\(\widetilde{W}_i\)</span> (a noisy signal of applicant <span class="math inline">\(i\)</span>’s ability/“type” <span class="math inline">\(W_i\)</span>) from all applicants and must decide whom to admit based on capacity and expected yield. Colleges prefer applicant <span class="math inline">\(i\)</span> to applicant <span class="math inline">\(j\)</span> if <span class="math inline">\(\widetilde{W}_i &gt; \widetilde{W}_j\)</span>.</p>
+<p>Suppose there is an ordered set of colleges <span class="math inline">\(\mathcal{K}\)</span> indexed by <span class="math inline">\(k = 1, \dots, K\)</span>. Each has capacity <span class="math inline">\(A_k\)</span> for an entering freshman class. Colleges receive reports of <span class="math inline">\(\widetilde{W}_i\)</span> (a noisy signal of applicant <span class="math inline">\(i\)</span>’s ability/“type” <span class="math inline">\(W_i\)</span>) from all applicants and must decide whom to admit based on capacity and expected yield. Colleges prefer applicant <span class="math inline">\(i\)</span> to applicant <span class="math inline">\(j\)</span> if <span class="math inline">\(\widetilde{W}_i &gt; \widetilde{W}_j\)</span>, and applicants prefer college <span class="math inline">\(k\)</span> to <span class="math inline">\(k&#39;\)</span> if <span class="math inline">\(k &lt; k&#39;\)</span>.</p>
 <p>To compute the results of an admissions round, I pretend that decisions are made sequentially and publicly, such that college <span class="math inline">\(k\)</span> observes the matches of all higher-ranked colleges (<span class="math inline">\(k&#39; &lt; k\)</span>). The admissions process follows a simple algorithm:</p>
 <ul>
-<li><p>The top-ranked college sorts its applicants by <span class="math inline">\(\widetilde{W}_i\)</span> (descending) and admits the top students up to capacity <span class="math inline">\(A_1\)</span>;</p></li>
+<li><p>The top-ranked college sorts its applicants by <span class="math inline">\(\widetilde{W}_i\)</span> (descending) and admits the top students up to capacity <span class="math inline">\(A_1\)</span> (all of whom match with it, for a 100% yield);</p></li>
 <li><p>The second-ranked college sorts its applicants by <span class="math inline">\(\widetilde{W}_i\)</span> and admits all who were admitted by the first-ranked college, plus the top students who were not admitted by the first-ranked college, up to capacity <span class="math inline">\(A_2\)</span>;</p></li>
 <li><p>And so on for <span class="math inline">\(k = 3, \dots, K\)</span>.</p></li>
 </ul>
-<p>The embedded assumptions are that (a) colleges do not have minimum requirements for <span class="math inline">\(\widetilde{W}_i\)</span>; (b) colleges will not reject applicants for being “overqualified”<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a> (in the sense of having a <span class="math inline">\(\widetilde{W}_i\)</span> higher than another admit); and (c) applicants have utility functions over <span class="math inline">\(\mathcal{K}\)</span> such that <span class="math inline">\(u_i(k&#39;) &gt; u_i(k)\)</span> for <span class="math inline">\(k&#39; &lt; k\)</span>, for all <span class="math inline">\(i\)</span>.</p>
+<p>The embedded assumptions are that (a) colleges do not have minimum requirements for <span class="math inline">\(\widetilde{W}_i\)</span>; (b) colleges will not reject applicants for being “overqualified”<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a> (in the sense of having a <span class="math inline">\(\widetilde{W}_i\)</span> higher than another admit).</p>
 </div>
 <div id="applicants" class="section level3">
 <h3>Applicants</h3>
@@ -63,65 +63,72 @@ P_\alpha(\text{admit at }k \mid W_i) = (1 - \alpha) P\left( 1 - \widetilde{G}(\w
 </div>
 <div id="simulation" class="section level2">
 <h2>Simulation</h2>
-<p>The features of this model can be studied via a simulation exercise, in the spirit of agent-based modeling.<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a> One challenging problem is to figure out the beliefs and utility functions which result in application behavior that is at least somewhat consistent with public information about the previous year’s admission rates (which I won’t attempt in this post).</p>
+<p>The features of this model can be studied via a simulation exercise, in the spirit of agent-based modeling. One challenging problem (which I won’t attempt in this post) is to figure out the beliefs and utility functions which result in an admissions outcome that is consistent with <span class="math inline">\(\{I_k\}\)</span>, in an equilibrium sense.</p>
+<p>I’ve made the code available on my <a href="https://github.com/sirallen/college-admissions-toy-model">GitHub</a>.</p>
 <p>For the simulation I construct a set of <span class="math inline">\(K = 50\)</span> colleges, each with capacity <span class="math inline">\(A_k = 100\)</span>. There are <span class="math inline">\(\sum_k A_k = 5000\)</span> prospective applicants with</p>
 <p><span class="math display">\[
 W_i \sim \mathcal{N}(0, 1^2) \\
 \widetilde{W}_i \mid W_i \sim \mathcal{N}(W_i, 0.1^2)
 \]</span></p>
-<p>The public admission rates are</p>
+<p>so that <span class="math inline">\(\widetilde{W}_i \sim \mathcal{N}(0, 1.1^2)\)</span>. The public admission rates are</p>
 <p><span class="math display">\[
 I_k = \left( 1 - \frac{k-1}{K-1} \right) \underline{r} + \frac{k-1}{K-1}\;\overline{r}
 \]</span></p>
-<p>with <span class="math inline">\((\underline{r}, \overline{r}) = (.05, .8)\)</span>, and the utility function (common to all applicants) has the form</p>
+<p>with <span class="math inline">\((\underline{r}, \overline{r}) = (.05, 1)\)</span>, and the utility function (common to all applicants) has the form</p>
 <p><span class="math display">\[
 u_i(k) = I_k^{-\beta} + \gamma (K - k)
 \]</span></p>
 <p>for <span class="math inline">\(\beta &gt; 0\)</span> and <span class="math inline">\(\gamma &gt; 0\)</span>. The latter parameter guarantees that there is a minimum increment in the utility function between consecutively-ranked colleges. I normalize the utilities so that <span class="math inline">\(\sum_k u_i(k)\cdot I_k = 1000\)</span>.</p>
 <p>I computed the “results” of this artificial admissions process for a grid of parameter values, which led to some interesting charts:</p>
 <center>
-<img src="https://www.dropbox.com/s/uqxch3p2cti73wq/UtilityFunctions.png?raw=1" width="700px">
+<img src="https://www.dropbox.com/s/h9s1ji63ybawejb/UtilityFunctions.png?raw=1" width="700px">
 </center>
 <center>
 Set of utility functions considered.
 </center>
 <center>
-<img src="https://www.dropbox.com/s/ho4srgvu99mcgjb/ProbAcceptanceBeliefsByType.png?raw=1" width="700px">
+<img src="https://www.dropbox.com/s/111q48ykx8tiyaq/ProbAcceptanceBeliefsByType.png?raw=1" width="700px">
 </center>
 <center>
 Applicants’ beliefs about probability of acceptance at each college, for different values of <span class="math inline">\((W_i, \alpha)\)</span>. Dashed line is the public information <span class="math inline">\(I_k\)</span>.
 </center>
 <center>
-<img src="https://www.dropbox.com/s/stktot3usw0n6lp/ApplicationVolumeByCollegeRank_gamma%3D3.png?raw=1" width="700px">
+<img src="https://www.dropbox.com/s/yh1fdsu0xctecw9/ApplicationVolumeByCollegeRank_gamma%3D3.png?raw=1" width="700px">
 </center>
 <center>
 Application volume by college rank for <span class="math inline">\(\gamma = 3\)</span> and different values of <span class="math inline">\((\alpha, \beta, c)\)</span>.
 </center>
 <center>
-<img src="https://www.dropbox.com/s/uknfqb29lriyua2/AdmitAndYieldRatesByCollegeRank_gamma%3D3.png?raw=1" width="700px">
+<img src="https://www.dropbox.com/s/u7p1ay8wa9jfft1/AdmitRatesByCollegeRank_gamma%3D3.png?raw=1" width="700px">
 </center>
 <center>
 Acceptance rates for <span class="math inline">\(\gamma = 3\)</span> and different values of <span class="math inline">\((\alpha, \beta, c)\)</span>. Dotted line is <span class="math inline">\(I_k\)</span>.
 </center>
 <center>
-<img src="https://www.dropbox.com/s/fzev7l6kuefxrzw/AvgNumApplicationsPerStudentByTypePercentile_gamma%3D3.png?raw=1" width="700px">
+<img src="https://www.dropbox.com/s/hqzry7wm9tt9o7d/YieldsByCollegeRank_gamma%3D3.png?raw=1" width="700px">
+</center>
+<center>
+Yields for <span class="math inline">\(\gamma = 3\)</span> and different values of <span class="math inline">\((\alpha, \beta, c)\)</span>. Dotted line is <span class="math inline">\(I_k\)</span>.
+</center>
+<center>
+<img src="https://www.dropbox.com/s/324jmw30v49ootx/AvgNumApplicationsPerStudentByTypePercentile_gamma%3D3.png?raw=1" width="700px">
 </center>
 <center>
 Average number of applications per applicant by ability/type percentile, for <span class="math inline">\(\gamma = 3\)</span> and different values of <span class="math inline">\((\alpha, \beta, c)\)</span>.
 </center>
 <center>
-<img src="https://www.dropbox.com/s/lwqeq37nk5r8x3x/NumApplicationsByCollegeRankAndTypePercentile_gamma%3D3_beta%3D1.50.png?raw=1" width="700px">
+<img src="https://www.dropbox.com/s/85pnpg8yu5tegqp/NumApplicationsByCollegeRankAndTypePercentile_gamma%3D3_beta%3D1.50.png?raw=1" width="700px">
 </center>
 <center>
 Total number of applications to each college, by applicant ability/type percentile, for <span class="math inline">\(\gamma = 3\)</span>, <span class="math inline">\(\beta = 1.5\)</span>, and different values of <span class="math inline">\((\alpha, c)\)</span>.
 </center>
 <center>
-<img src="https://www.dropbox.com/s/ncpw3go3bf27ev8/NumAdmitsByCollegeRankAndTypePercentile_gamma%3D3_beta%3D1.50.png?raw=1" width="700px">
+<img src="https://www.dropbox.com/s/4d5pfopmkwhpnkg/NumAdmitsByCollegeRankAndTypePercentile_gamma%3D3_beta%3D1.50.png?raw=1" width="700px">
 </center>
 <center>
 Number of admittances to each college, by applicant ability/type percentile, for <span class="math inline">\(\gamma = 3\)</span>, <span class="math inline">\(\beta = 1.5\)</span>, and different values of <span class="math inline">\((\alpha, c)\)</span>.
 </center>
-<p>Of these, the one that catches my attention is the <span class="math inline">\((\beta = 2, \gamma = 3, c = 1)\)</span> case, where the admission rates are at least increasing with <span class="math inline">\(k\)</span>. For <span class="math inline">\(\alpha \in \{0.1, 0.2\}\)</span>, low-type applicants send lots of applications to colleges on the more selective end of the spectrum, driving admission rates down. (Note that there is a sizable “gap” in the choice sets for these types, in that prospects apply to colleges <span class="math inline">\(j &lt; k\)</span> and <span class="math inline">\(j &gt; k\)</span> but not to <span class="math inline">\(k\)</span>; likewise the set of types from which colleges receive applications is disconnected.) I expect that in reality it is the high-type applicants who are sending the most applications (on a per-applicant basis), so this is strange. The other results are even more weird so I’m not going to comment further. The next step is to figure out how to better structure the model and environment such that there can be “equilibrium”, in that the admission rates match the previous period’s admission rates reported as <span class="math inline">\(I_k\)</span>. While the simulations are fun, this is going to require more math…</p>
+<!-- Of these, the one that catches my attention is the $(\beta = 2, \gamma = 3, c = 1)$ case, where the admission rates are at least increasing with $k$. For $\alpha \in \{0.1, 0.2\}$, low-type applicants send lots of applications to colleges on the more selective end of the spectrum, driving admission rates down. (Note that there is a sizable "gap" in the choice sets for these types, in that prospects apply to colleges $j < k$ and $j > k$ but not to $k$; likewise the set of types from which colleges receive applications is disconnected.) I expect that in reality it is the high-type applicants who are sending the most applications (on a per-applicant basis), so this is strange. The other results are even more weird so I'm not going to comment further... -->
 <p>That’s it for now! More to come in a future post…</p>
 </div>
 <div class="footnotes">
@@ -130,6 +137,5 @@ Number of admittances to each college, by applicant ability/type percentile, for
 <li id="fn1"><p>I <a href="https://twitter.com/Sirallenrolly/status/1313548240466268160?s=20">tweeted</a> about it, too!<a href="#fnref1" class="footnote-back">↩</a></p></li>
 <li id="fn2"><p>A richer model might incorporate incentives for colleges to keep their admission rates low.<a href="#fnref2" class="footnote-back">↩</a></p></li>
 <li id="fn3"><p>In practice, applicants will face an application limit <span class="math inline">\(L\)</span> so that the choice set is <span class="math inline">\(C_i \in \{ \mathcal{C} \in \mathscr{P}(\mathcal{K}) : |\mathcal{C}| &lt; L \}\)</span>. The Common App presently limits students to 20 applications.<a href="#fnref3" class="footnote-back">↩</a></p></li>
-<li id="fn4"><p>I’ve made the code available <a href="https://github.com/sirallen/college-admissions-toy-model">here</a>.<a href="#fnref4" class="footnote-back">↩</a></p></li>
 </ol>
 </div>
