@@ -7,7 +7,7 @@ tags: []
 categories: []
 ---
 
-The chart below from a 2019 [Pew Research article](https://www.pewresearch.org/fact-tank/2019/04/09/a-majority-of-u-s-colleges-admit-most-students-who-apply/) caught my attention the other day. It shows a concerning trend of increasing selectivity at colleges which has been written about in plenty of [other](https://www.businessinsider.com/how-hard-to-get-into-harvard-stanford-2017-4) [places](https://www.nytimes.com/2019/03/29/us/college-admissions-rates.html) as well.^[I [tweeted](https://twitter.com/Sirallenrolly/status/1313548240466268160?s=20) about it, too!] While this doesn't necessarily make it "harder" to get into these competitive schools (it could just be that more students who would have been non-competitive in previous years are applying), a rise in the average number of applications per applicant can certainly bring with it a concomitant increase in anxiety for successive waves of prospects.
+The chart below from a 2019 [Pew Research article](https://www.pewresearch.org/fact-tank/2019/04/09/a-majority-of-u-s-colleges-admit-most-students-who-apply/) caught my attention the other day. It shows a concerning trend of increasing selectivity at colleges which has been written about in a number of [other](https://www.businessinsider.com/how-hard-to-get-into-harvard-stanford-2017-4) [places](https://www.nytimes.com/2019/03/29/us/college-admissions-rates.html) as well.^[I [tweeted](https://twitter.com/Sirallenrolly/status/1313548240466268160?s=20) about it, too.] The article reports that the average number of applications per enrollee increased from about four in 2002 to 6.8 in 2017, with the increase likely even more severe for competitive colleges. While this doesn't necessarily make it "harder" to get into these schools (it could just be that more students who would have been non-competitive in previous years are applying), the rise in the average number of applications per applicant can certainly bring with it a concomitant increase in anxiety for successive waves of prospects.
 
 <center><img src="https://www.dropbox.com/s/8vceqrbmyos5ny7/FT_19.04.01_CollegeAdmissions_3.png?raw=1" width="700px"></center>
 
@@ -27,7 +27,7 @@ To compute the results of an admissions round, I pretend that decisions are made
 
 * And so on for $k = 3, \dots, K$.
 
-The embedded assumptions are that (a) colleges do not have minimum requirements for $\widetilde{W}_i$; (b) colleges will not reject applicants for being "overqualified"^[A richer model might incorporate incentives for colleges to keep their admission rates low.] (in the sense of having a $\widetilde{W}_i$ higher than another admit).
+The embedded assumptions are that (a) colleges do not have minimum requirements for $\widetilde{W}_i$ and (b) colleges will not reject applicants for being "overqualified"^[A richer model might incorporate incentives for colleges to keep their admission rates low.] (in the sense of having a $\widetilde{W}_i$ higher than another admit).
 
 ### Applicants
 
@@ -63,7 +63,7 @@ The corresponding probabilities are easy to compute by the independent admission
 
 #### Beliefs
 
-Suppose that types are distributed $W \sim G(w)$. Each applicant knows her own type as well as the distribution $G$, and sends colleges a noisy signal $\widetilde{W}_i = W_i + \epsilon_i$, $\epsilon_i \sim F(\epsilon)$, where $F$ is known but the realization of $\epsilon_i$ is unknown. I assume that prior beliefs are consistent with a view of the admissions process as a perfect sorting mechanism, such that the $\sum_{j\leq k} A_j$ applicants with the highest $\widetilde{W}_i$'s will be admitted to the $k$ highest-ranked colleges. (This actually agrees with the outcome of the colleges' decision process if every prospect sends an application to every college, which is what happens when $c = 0$.)
+Suppose that types are distributed $W \sim G(w)$. Each applicant knows her own type as well as the distribution $G$, and sends colleges a noisy signal $\widetilde{W}_i = W_i + \epsilon_i$, $\epsilon_i \sim F(\epsilon)$, where $F$ is known but the realization of $\epsilon_i$ is unknown. I assume that prior beliefs are consistent with a view of the admissions process as a perfect sorting mechanism, such that the $\sum_{j\leq k} A_j$ applicants with the highest $\widetilde{W}_i$'s will be admitted to the $k$ highest-ranked colleges. (This actually agrees with the outcome of the colleges' decision process if every prospect sends an application to every college, which is what happens when $c = 0$.^[The acceptance rate for college $k$ will be $\sum_{j\leq k} A_j/\sum_j A_j$, and the yield $A_k / \sum_{j\leq k} A_j$.])
 
 Let $\widetilde{G}$ be the marginal distribution of $\widetilde{W}_i$ (which applicants can calculate using knowledge of $F$ and $G$). After observing public information $I_k$, e.g., last year's admission rate at college $k$, the posterior beliefs are
 
@@ -75,7 +75,7 @@ where $\alpha \in [0, 1]$ represents the degree of shrinkage.
 
 ## Simulation
 
-The features of this model can be studied via a simulation exercise, in the spirit of agent-based modeling. One challenging problem (which I won't attempt in this post) is to figure out the beliefs and utility functions which result in an admissions outcome that is consistent with $\{I_k\}$, in an equilibrium sense.
+The features of this model can be studied via a simulation exercise, in the spirit of agent-based modeling. One challenging problem (which I won't attempt in this post) is to figure out the beliefs and utility functions which result in an admissions outcome that is consistent with $\{I_k\}$, in an equilibrium sense, for the $c > 0$ case.
 
 I've made the code available on my [GitHub](https://github.com/sirallen/college-admissions-toy-model).
 
