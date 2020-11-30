@@ -9,7 +9,7 @@ categories: []
 
 
 
-<p>The chart below from a 2019 <a href="https://www.pewresearch.org/fact-tank/2019/04/09/a-majority-of-u-s-colleges-admit-most-students-who-apply/">Pew Research article</a> caught my attention the other day. It shows a concerning trend of increasing selectivity at colleges which has been written about in plenty of <a href="https://www.businessinsider.com/how-hard-to-get-into-harvard-stanford-2017-4">other</a> <a href="https://www.nytimes.com/2019/03/29/us/college-admissions-rates.html">places</a> as well.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> While this doesn’t necessarily make it “harder” to get into these competitive schools (it could just be that more students who would have been non-competitive in previous years are applying), a rise in the average number of applications per applicant can certainly bring with it a concomitant increase in anxiety for successive waves of prospects.</p>
+<p>The chart below from a 2019 <a href="https://www.pewresearch.org/fact-tank/2019/04/09/a-majority-of-u-s-colleges-admit-most-students-who-apply/">Pew Research article</a> caught my attention the other day. It shows a concerning trend of increasing selectivity at colleges which has been written about in a number of <a href="https://www.businessinsider.com/how-hard-to-get-into-harvard-stanford-2017-4">other</a> <a href="https://www.nytimes.com/2019/03/29/us/college-admissions-rates.html">places</a> as well.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> The article reports that the average number of applications per enrollee increased from about four in 2002 to 6.8 in 2017, with the increase likely even more severe for competitive colleges. While this doesn’t necessarily make it “harder” to get into these schools (it could just be that more students who would have been non-competitive in previous years are applying), the rise in the average number of applications per applicant can certainly bring with it a concomitant increase in anxiety for successive waves of prospects.</p>
 <center>
 <img src="https://www.dropbox.com/s/8vceqrbmyos5ny7/FT_19.04.01_CollegeAdmissions_3.png?raw=1" width="700px">
 </center>
@@ -25,7 +25,7 @@ categories: []
 <li><p>The second-ranked college sorts its applicants by <span class="math inline">\(\widetilde{W}_i\)</span> and admits all who were admitted by the first-ranked college, plus the top students who were not admitted by the first-ranked college, up to capacity <span class="math inline">\(A_2\)</span>;</p></li>
 <li><p>And so on for <span class="math inline">\(k = 3, \dots, K\)</span>.</p></li>
 </ul>
-<p>The embedded assumptions are that (a) colleges do not have minimum requirements for <span class="math inline">\(\widetilde{W}_i\)</span>; (b) colleges will not reject applicants for being “overqualified”<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a> (in the sense of having a <span class="math inline">\(\widetilde{W}_i\)</span> higher than another admit).</p>
+<p>The embedded assumptions are that (a) colleges do not have minimum requirements for <span class="math inline">\(\widetilde{W}_i\)</span> and (b) colleges will not reject applicants for being “overqualified”<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a> (in the sense of having a <span class="math inline">\(\widetilde{W}_i\)</span> higher than another admit).</p>
 </div>
 <div id="applicants" class="section level3">
 <h3>Applicants</h3>
@@ -52,7 +52,7 @@ P(\text{admit at }k&#39; \mid W_i) \left[ P_i(\varnothing) u_i(k&#39;) + \sum_{k
 </div>
 <div id="beliefs" class="section level4">
 <h4>Beliefs</h4>
-<p>Suppose that types are distributed <span class="math inline">\(W \sim G(w)\)</span>. Each applicant knows her own type as well as the distribution <span class="math inline">\(G\)</span>, and sends colleges a noisy signal <span class="math inline">\(\widetilde{W}_i = W_i + \epsilon_i\)</span>, <span class="math inline">\(\epsilon_i \sim F(\epsilon)\)</span>, where <span class="math inline">\(F\)</span> is known but the realization of <span class="math inline">\(\epsilon_i\)</span> is unknown. I assume that prior beliefs are consistent with a view of the admissions process as a perfect sorting mechanism, such that the <span class="math inline">\(\sum_{j\leq k} A_j\)</span> applicants with the highest <span class="math inline">\(\widetilde{W}_i\)</span>’s will be admitted to the <span class="math inline">\(k\)</span> highest-ranked colleges. (This actually agrees with the outcome of the colleges’ decision process if every prospect sends an application to every college, which is what happens when <span class="math inline">\(c = 0\)</span>.)</p>
+<p>Suppose that types are distributed <span class="math inline">\(W \sim G(w)\)</span>. Each applicant knows her own type as well as the distribution <span class="math inline">\(G\)</span>, and sends colleges a noisy signal <span class="math inline">\(\widetilde{W}_i = W_i + \epsilon_i\)</span>, <span class="math inline">\(\epsilon_i \sim F(\epsilon)\)</span>, where <span class="math inline">\(F\)</span> is known but the realization of <span class="math inline">\(\epsilon_i\)</span> is unknown. I assume that prior beliefs are consistent with a view of the admissions process as a perfect sorting mechanism, such that the <span class="math inline">\(\sum_{j\leq k} A_j\)</span> applicants with the highest <span class="math inline">\(\widetilde{W}_i\)</span>’s will be admitted to the <span class="math inline">\(k\)</span> highest-ranked colleges. (This actually agrees with the outcome of the colleges’ decision process if every prospect sends an application to every college, which is what happens when <span class="math inline">\(c = 0\)</span>.<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a>)</p>
 <p>Let <span class="math inline">\(\widetilde{G}\)</span> be the marginal distribution of <span class="math inline">\(\widetilde{W}_i\)</span> (which applicants can calculate using knowledge of <span class="math inline">\(F\)</span> and <span class="math inline">\(G\)</span>). After observing public information <span class="math inline">\(I_k\)</span>, e.g., last year’s admission rate at college <span class="math inline">\(k\)</span>, the posterior beliefs are</p>
 <p><span class="math display">\[
 P_\alpha(\text{admit at }k \mid W_i) = (1 - \alpha) P\left( 1 - \widetilde{G}(\widetilde{W}_i) &lt; \frac{\sum_{j\leq k}A_j}{\sum_j A_j} \right) + \alpha I_k
@@ -63,7 +63,7 @@ P_\alpha(\text{admit at }k \mid W_i) = (1 - \alpha) P\left( 1 - \widetilde{G}(\w
 </div>
 <div id="simulation" class="section level2">
 <h2>Simulation</h2>
-<p>The features of this model can be studied via a simulation exercise, in the spirit of agent-based modeling. One challenging problem (which I won’t attempt in this post) is to figure out the beliefs and utility functions which result in an admissions outcome that is consistent with <span class="math inline">\(\{I_k\}\)</span>, in an equilibrium sense.</p>
+<p>The features of this model can be studied via a simulation exercise, in the spirit of agent-based modeling. One challenging problem (which I won’t attempt in this post) is to figure out the beliefs and utility functions which result in an admissions outcome that is consistent with <span class="math inline">\(\{I_k\}\)</span>, in an equilibrium sense, for the <span class="math inline">\(c &gt; 0\)</span> case.</p>
 <p>I’ve made the code available on my <a href="https://github.com/sirallen/college-admissions-toy-model">GitHub</a>.</p>
 <p>For the simulation I construct a set of <span class="math inline">\(K = 50\)</span> colleges, each with capacity <span class="math inline">\(A_k = 100\)</span>. There are <span class="math inline">\(\sum_k A_k = 5000\)</span> prospective applicants with</p>
 <p><span class="math display">\[
@@ -134,8 +134,9 @@ Number of admittances to each college, by applicant ability/type percentile, for
 <div class="footnotes">
 <hr />
 <ol>
-<li id="fn1"><p>I <a href="https://twitter.com/Sirallenrolly/status/1313548240466268160?s=20">tweeted</a> about it, too!<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn1"><p>I <a href="https://twitter.com/Sirallenrolly/status/1313548240466268160?s=20">tweeted</a> about it, too.<a href="#fnref1" class="footnote-back">↩</a></p></li>
 <li id="fn2"><p>A richer model might incorporate incentives for colleges to keep their admission rates low.<a href="#fnref2" class="footnote-back">↩</a></p></li>
 <li id="fn3"><p>In practice, applicants will face an application limit <span class="math inline">\(L\)</span> so that the choice set is <span class="math inline">\(C_i \in \{ \mathcal{C} \in \mathscr{P}(\mathcal{K}) : |\mathcal{C}| &lt; L \}\)</span>. The Common App presently limits students to 20 applications.<a href="#fnref3" class="footnote-back">↩</a></p></li>
+<li id="fn4"><p>The acceptance rate for college <span class="math inline">\(k\)</span> will be <span class="math inline">\(\sum_{j\leq k} A_j/\sum_j A_j\)</span>, and the yield <span class="math inline">\(A_k / \sum_{j\leq k} A_j\)</span>.<a href="#fnref4" class="footnote-back">↩</a></p></li>
 </ol>
 </div>
