@@ -71,13 +71,13 @@ $$
 P_\alpha(\text{admit at }k \mid W_i) = (1 - \alpha) P\left( 1 - \widetilde{G}(\widetilde{W}_i) < \frac{\sum_{j\leq k}A_j}{\sum_j A_j} \right) + \alpha I_k
 $$
 
-where $\alpha \in [0, 1]$ represents the degree of shrinkage.
+where $\alpha \in [0, 1]$ represents the degree of shrinkage. There are certainly other possibilities: maybe it's more realistic that applicants only update their beliefs to make themselves overconfident about their chances at more selective colleges.
+
+One challenging problem (which I won't attempt in this post) is to figure out the beliefs and utility functions which result in an admissions outcome that is consistent with $\{I_k\}$, in an equilibrium sense, for the $c > 0$ case.
 
 ## Simulation
 
-The features of this model can be studied via a simulation exercise, in the spirit of agent-based modeling. One challenging problem (which I won't attempt in this post) is to figure out the beliefs and utility functions which result in an admissions outcome that is consistent with $\{I_k\}$, in an equilibrium sense, for the $c > 0$ case.
-
-I've made the code available on my [GitHub](https://github.com/sirallen/college-admissions-toy-model).
+The features of this model can be studied via a simulation exercise, in the spirit of agent-based modeling. I've made the code available on my [GitHub](https://github.com/sirallen/college-admissions-toy-model).
 
 For the simulation I construct a set of $K = 50$ colleges, each with capacity $A_k = 100$. There are $\sum_k A_k = 5000$ prospective applicants with
 
@@ -92,7 +92,7 @@ $$
 I_k = \left( 1 - \frac{k-1}{K-1} \right) \underline{r} + \frac{k-1}{K-1}\;\overline{r}
 $$
 
-with $(\underline{r}, \overline{r}) = (.05, 1)$, and the utility function (common to all applicants) has the form
+with $(\underline{r}, \overline{r}) = (.05, 1)$, which corresponds to $I_k = \sum_{j\leq k} A_j / \sum_j A_j$ in this example. The utility function (common to all applicants) has the form
 
 $$
 u_i(k) = I_k^{-\beta} + \gamma (K - k)

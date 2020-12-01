@@ -57,14 +57,14 @@ P(\text{admit at }k&#39; \mid W_i) \left[ P_i(\varnothing) u_i(k&#39;) + \sum_{k
 <p><span class="math display">\[
 P_\alpha(\text{admit at }k \mid W_i) = (1 - \alpha) P\left( 1 - \widetilde{G}(\widetilde{W}_i) &lt; \frac{\sum_{j\leq k}A_j}{\sum_j A_j} \right) + \alpha I_k
 \]</span></p>
-<p>where <span class="math inline">\(\alpha \in [0, 1]\)</span> represents the degree of shrinkage.</p>
+<p>where <span class="math inline">\(\alpha \in [0, 1]\)</span> represents the degree of shrinkage. There are certainly other possibilities: maybe it’s more realistic that applicants only update their beliefs to make themselves overconfident about their chances at more selective colleges.</p>
+<p>One challenging problem (which I won’t attempt in this post) is to figure out the beliefs and utility functions which result in an admissions outcome that is consistent with <span class="math inline">\(\{I_k\}\)</span>, in an equilibrium sense, for the <span class="math inline">\(c &gt; 0\)</span> case.</p>
 </div>
 </div>
 </div>
 <div id="simulation" class="section level2">
 <h2>Simulation</h2>
-<p>The features of this model can be studied via a simulation exercise, in the spirit of agent-based modeling. One challenging problem (which I won’t attempt in this post) is to figure out the beliefs and utility functions which result in an admissions outcome that is consistent with <span class="math inline">\(\{I_k\}\)</span>, in an equilibrium sense, for the <span class="math inline">\(c &gt; 0\)</span> case.</p>
-<p>I’ve made the code available on my <a href="https://github.com/sirallen/college-admissions-toy-model">GitHub</a>.</p>
+<p>The features of this model can be studied via a simulation exercise, in the spirit of agent-based modeling. I’ve made the code available on my <a href="https://github.com/sirallen/college-admissions-toy-model">GitHub</a>.</p>
 <p>For the simulation I construct a set of <span class="math inline">\(K = 50\)</span> colleges, each with capacity <span class="math inline">\(A_k = 100\)</span>. There are <span class="math inline">\(\sum_k A_k = 5000\)</span> prospective applicants with</p>
 <p><span class="math display">\[
 W_i \sim \mathcal{N}(0, 1^2) \\
@@ -74,7 +74,7 @@ W_i \sim \mathcal{N}(0, 1^2) \\
 <p><span class="math display">\[
 I_k = \left( 1 - \frac{k-1}{K-1} \right) \underline{r} + \frac{k-1}{K-1}\;\overline{r}
 \]</span></p>
-<p>with <span class="math inline">\((\underline{r}, \overline{r}) = (.05, 1)\)</span>, and the utility function (common to all applicants) has the form</p>
+<p>with <span class="math inline">\((\underline{r}, \overline{r}) = (.05, 1)\)</span>, which corresponds to <span class="math inline">\(I_k = \sum_{j\leq k} A_j / \sum_j A_j\)</span> in this example. The utility function (common to all applicants) has the form</p>
 <p><span class="math display">\[
 u_i(k) = I_k^{-\beta} + \gamma (K - k)
 \]</span></p>
