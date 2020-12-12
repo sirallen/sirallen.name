@@ -19,11 +19,11 @@ My goal is to build a model for a multi-period college admissions market which, 
 
 Suppose there is an ordered set of colleges $\mathcal{K}$ indexed by $k = 1, \dots, K$. Each has capacity $A_k$ for an entering freshman class. Colleges receive reports of $\widetilde{W}_i$ (a noisy signal of applicant $i$'s ability/"type" $W_i$) from all applicants and must decide whom to admit based on capacity and expected yield. Colleges prefer applicant $i$ to applicant $j$ if $\widetilde{W}_i > \widetilde{W}_j$, and applicants prefer college $k$ to $k'$ if $k < k'$.
 
-To compute the results of an admissions round, I pretend that decisions are made sequentially and publicly, such that college $k$ observes the matches of all higher-ranked colleges ($k' < k$). The admissions process follows a simple algorithm:
+To compute the results of an admissions round, I pretend that decisions are made sequentially and publicly, such that college $k$ observes the admittances of all higher-ranked colleges ($k' < k$). The admissions process follows a simple algorithm^[This is similar to what's known as a "serial dictatorship mechanism", the difference being that there is still an application process that forces students to make decisions about which colleges to apply to.]:
 
 * The top-ranked college sorts its applicants by $\widetilde{W}_i$ (descending) and admits the top students up to capacity $A_1$ (all of whom match with it, for a 100% yield);
 
-* The second-ranked college sorts its applicants by $\widetilde{W}_i$ and admits all who were admitted by the first-ranked college, plus the top students who were not admitted by the first-ranked college, up to capacity $A_2$;
+* The second-ranked college sorts its applicants by $\widetilde{W}_i$ (descending) and admits all who were admitted by the first-ranked college, plus the top students who were not admitted by the first-ranked college, up to capacity $A_2$;
 
 * And so on for $k = 3, \dots, K$.
 
@@ -47,7 +47,7 @@ $$
 P_i(\mathcal{S}) = \prod_{k \in \mathcal{S}} P(\text{admit at }k \mid W_i) \prod_{k \in C_i\setminus\mathcal{S}} (1 - P(\text{admit at }k \mid W_i)).
 $$
 
-$\mathscr{P}(\mathcal{K})$ is potentially a very large search space; I simplify the problem by using a greedy algorithm which at each step (starting from $C_i = \varnothing$) adds the college $k'$ to $C_i$ which yields the highest increase in expected utility, provided there is one. Note that by adding $k'$ to $C_i$, an applicant's expected utility will change by
+$\mathscr{P}(\mathcal{K})$ is potentially a very large search space; I simplify the problem by using a greedy algorithm which at each step (starting from $C_i = \varnothing$) adds the college $k'$ to $C_i$ which yields the highest increase in expected utility, provided there is one. (update 12/12/2020: here's a [proof](https://www.dropbox.com/s/ma83l2o60jddxyh/college-model-greedy-optimal-proof.pdf?dl=0) that this algorithm finds the optimal $C^*(W)$.) Note that by adding $k'$ to $C_i$, an applicant's expected utility will change by
 
 $$
 P(\text{admit at }k' \mid W_i) \left[ \sum_{\mathcal{S} \in \mathscr{P}(C_i)} P_i(\mathcal{S}) \cdot \max\{0,\; u_i(k') - \max_{k \in \mathcal{S}} u_i(k)\} \right] - c
