@@ -1,3 +1,10 @@
+[build]
+  command = "hugo"
+  publish = "public"
+
+[build.environment]
+  HUGO_VERSION = "0.160.1"
+
 [[redirects]]
   from = "/blog/arrival-rate-bias-part-1"
   to = "https://towardsdatascience.com/arrival-rate-bias-ab-testing-1-d291ae9d0cab"
