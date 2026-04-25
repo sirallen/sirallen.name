@@ -6,21 +6,30 @@ googleAnalytics = ""
 disqusShortname = "sirallen"
 ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
 
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+
 [permalinks]
     post = "/:year/:month/:day/:slug/"
 
 [[menu.main]]
-    name = "About"
-    url = "/about/"
+    name = "Home"
+    url = "/"
     weight = 1
 [[menu.main]]
     name = "Blog"
     url = "/blog/"
     weight = 2
 [[menu.main]]
-    name = "Projects"
-    url = "/projects/"
+    name = "Links"
+    url = "/links/"
     weight = 3
+#[[menu.main]]
+#    name = "Projects"
+#    url = "/projects/"
+#    weight = 3
 #[[menu.main]]
 #    name = "Resources"
 #    url = "/resources/"
@@ -28,7 +37,7 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
 
 [params]
     # description = "A website built with Hugo and blogdown."
-    footer = "&copy; Allen Sirolly 2021 | [Github](https://github.com/sirallen) | [Twitter](https://twitter.com/allensirolly)"
+    footer = "&copy; Allen Sirolly 2026 | [Github](https://github.com/sirallen) | [X (formerly Twitter)](https://twitter.com/allensirolly)"
     custom_css = ["css/custom.css"]
 
     # options for highlight.js (version, additional languages, and theme)
@@ -41,19 +50,7 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
     MathJaxVersion = "2.7.1"
 
     [params.logo]
-    url = "logo.PNG"
-    width = 50
-    height = 50
-    alt = "Logo"
-
-[[redirects]]
-  from = "/blog/arrival-rate-bias-part-1"
-  to = "https://towardsdatascience.com/arrival-rate-bias-ab-testing-1-d291ae9d0cab"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/blog/arrival-rate-bias-part-2"
-  to = "https://medium.com/@sirallenrolly/arrival-rate-bias-ab-testing-2-3930fb7a15cf"
-  status = 301
-  force = true
+    url = "Sirolly_Allen.jpg"
+    width = 140
+    height = 140
+    alt = "Allen Sirolly"

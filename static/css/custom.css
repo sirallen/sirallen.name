@@ -2,6 +2,10 @@
   border-bottom: none;
 }
 
+.masthead h1 {
+  margin-bottom: 0;
+}
+
 .masthead h1 a img {
   width: 140px;
   height: 140px;
@@ -10,4 +14,32 @@
 
 .project-desc {
   line-height: 1.25;
+}
+
+.site-name {
+  text-align: right;
+  margin-top: 0.3em;
+  margin-bottom: 1em;
+  font-weight: bold;
+}
+
+@media (max-width: 980px) {
+  .site-name {
+    text-align: center;
+  }
+}
+
+.paper-title {
+  margin-bottom: 0;
+}
+
+.media {
+  margin-top: 0;
+  margin-bottom: 0.2em;
+}
+
+.abstract {
+  font-size: 0.8em;
+  line-height: 1.3;
+  text-align: justify;
 }
