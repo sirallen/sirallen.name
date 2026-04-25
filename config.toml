@@ -8,6 +8,8 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
 
 [markup]
   [markup.goldmark]
+    [markup.goldmark.extensions]
+      linkify = false
     [markup.goldmark.renderer]
       unsafe = true
 
@@ -23,9 +25,13 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
     url = "/blog/"
     weight = 2
 [[menu.main]]
+    name = "Teaching"
+    url = "/teaching/"
+    weight = 3
+[[menu.main]]
     name = "Links"
     url = "/links/"
-    weight = 3
+    weight = 4
 #[[menu.main]]
 #    name = "Projects"
 #    url = "/projects/"

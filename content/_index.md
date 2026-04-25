@@ -4,7 +4,7 @@ title: "About"
 
 Welcome to my blog and personal site! I'm currently a fifth-year PhD student in the Decision, Risk, and Operations (<a href="https://business.columbia.edu/faculty/divisions/dro" target="_blank">DRO</a>) division of Columbia Business School, advised by Profs. <a href="https://ykanoria.github.io/" target="_blank">Yash Kanoria</a> and <a href="https://www.hongyaoma.com/" target="_blank">Hongyao Ma</a>. My current research examines college admissions and prediction markets from an empirical perspective. I was previously a data scientist at <a href="https://www.wealthfront.com/" target="_blank">Wealthfront</a>, where I primarily worked on advanced analytics, causal inference, and A/B experimentation.
 
-Here is my <a href="https://drive.google.com/file/d/1SYsVVouhwtM93_Ww4wHZkbD5F4JBOGKW/view?usp=drive_link" target="_blank">CV</a>.
+Here is my <a href="https://drive.google.com/file/d/1SYsVVouhwtM93_Ww4wHZkbD5F4JBOGKW/view?usp=drive_link" target="_blank">CV</a>. My email address is <code>as6383@columbia.edu</code>.
 
 <!--
 I have a BA in Mathematical Economics from the University of Pennsylvania. I'm broadly interested in data science, economics, and U.S. and Chinese current affairs. I try to keep tabs on all of these things and more on [Twitter](https://twitter.com/allensirolly), where you can find a more comprehensive view of my interests. I'm also active on [Goodreads](https://www.goodreads.com/review/list/7468726?ref=nav_mybooks) and [Strava](https://www.strava.com/athletes/65957873).
