@@ -2,7 +2,7 @@
 title: "About"
 ---
 
-Welcome to my blog and personal site! I'm currently a fifth-year PhD student in the Decision, Risk, and Operations (<a href="https://business.columbia.edu/faculty/divisions/dro" target="_blank">DRO</a>) division of Columbia Business School, advised by Profs. <a href="https://ykanoria.github.io/" target="_blank">Yash Kanoria</a> and <a href="https://www.hongyaoma.com/" target="_blank">Hongyao Ma</a>. My research examines college admissions and prediction markets through an empirical lens, using tools from econometrics and network analysis.
+Welcome to my personal site! I'm a fifth-year PhD student in the Decision, Risk, and Operations (<a href="https://business.columbia.edu/faculty/divisions/dro" target="_blank">DRO</a>) division at Columbia Business School, advised by Profs. <a href="https://ykanoria.github.io/" target="_blank">Yash Kanoria</a> and <a href="https://www.hongyaoma.com/" target="_blank">Hongyao Ma</a>. My research examines college admissions and prediction markets through an empirical lens, using tools from econometrics and network analysis.
 
 Prior to starting my PhD, I was a data scientist at <a href="https://www.wealthfront.com/" target="_blank">Wealthfront</a>, where I worked on advanced analytics, causal inference, and A/B experimentation. My undergraduate degree is from the University of Pennsylvania, where I majored in Mathematical Economics.
 

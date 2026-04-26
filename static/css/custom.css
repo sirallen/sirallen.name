@@ -1,3 +1,11 @@
+body {
+  background-color: #FFFEFC;
+}
+
+a:hover {
+  color: #0000ff;
+}
+
 .menu li:not([class]) a, .copyright a {
   border-bottom: none;
 }
@@ -21,6 +29,7 @@
   margin-top: 0.3em;
   margin-bottom: 1em;
   font-weight: bold;
+  font-size: 1.5em;
 }
 
 @media (max-width: 980px) {
@@ -40,6 +49,6 @@
 
 .abstract {
   font-size: 0.8em;
-  line-height: 1.3;
+  line-height: 1.5;
   text-align: justify;
 }
