@@ -29,4 +29,4 @@ Major Revision, *Management Science*.
 
 <hr>
 
-*This site is built with blogdown and Hugo and deployed with Netlify. The minimalist theme is based on <a href="https://github.com/dmulholland/ivy" target="_blank">Ivy</a> by Darren Mulholland. I'm using a version for Hugo (<a href="https://github.com/yihui/hugo-ivy" target="_blank">hugo-ivy</a>) made by Yihui Xie.*
+*This site is built with blogdown and Hugo and deployed with Netlify. The minimalist theme is based on <a href="https://github.com/MJGrey/ivy" target="_blank">Ivy</a> by Darren Mulholland. I'm using a version for Hugo (<a href="https://github.com/yihui/hugo-ivy" target="_blank">hugo-ivy</a>) made by Yihui Xie.*
