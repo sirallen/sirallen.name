@@ -8,10 +8,6 @@ Prior to starting my PhD, I was a data scientist at <a href="https://www.wealthf
 
 Here is my <a href="https://drive.google.com/file/d/1SYsVVouhwtM93_Ww4wHZkbD5F4JBOGKW/view?usp=drive_link" target="_blank">CV</a>. My email address is <code>as6383 \[at\] columbia.edu</code>.
 
-<!--
-I have a BA in Mathematical Economics from the University of Pennsylvania. I'm broadly interested in data science, economics, and U.S. and Chinese current affairs. I try to keep tabs on all of these things and more on [Twitter](https://twitter.com/allensirolly), where you can find a more comprehensive view of my interests. I'm also active on [Goodreads](https://www.goodreads.com/review/list/7468726?ref=nav_mybooks) and [Strava](https://www.strava.com/athletes/65957873).
--->
-
 ## Working Papers
 
 <p class="paper-title"><strong><a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5714122" target="_blank">Network-Based Detection of Wash Trading</a></strong>
